@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>382 Stevens Ln — Property Playbook</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0d2d4a;
+    --navy-light: #1a3f5c;
+    --green: #4a9e49;
+    --green-light: #6ab869;
+    --cream: #f4f4ef;
+    --cream-dark: #e8e8e0;
+    --amber: #d4870a;
+    --red: #c0392b;
+    --text: #1a1a1a;
+    --text-muted: #6b6b6b;
+    --border: rgba(13,45,74,0.12);
+    --card-bg: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); line-height: 1.6; }
+  
+  /* Header */
+  .header { background: var(--navy); color: white; padding: 3rem 2rem 2rem; position: relative; overflow: hidden; }
+  .header::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 40px; background: var(--cream); clip-path: ellipse(55% 100% at 50% 100%); }
+  .header-inner { max-width: 900px; margin: 0 auto; }
+  .header-tag { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--green-light); margin-bottom: 0.5rem; font-weight: 500; }
+  .header h1 { font-family: 'DM Serif Display', serif; font-size: 2.8rem; font-weight: 400; line-height: 1.15; margin-bottom: 0.5rem; }
+  .header h1 em { color: var(--green-light); font-style: italic; }
+  .header-sub { font-size: 15px; color: rgba(255,255,255,0.65); max-width: 500px; }
+  .header-stats { display: flex; gap: 2rem; margin-top: 1.5rem; }
+  .hstat { }
+  .hstat .val { font-size: 1.6rem; font-weight: 600; color: white; }
+  .hstat .lbl { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* Nav */
+  .nav { background: white; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .nav-inner { max-width: 900px; margin: 0 auto; display: flex; gap: 0; overflow-x: auto; }
+  .nav-btn { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 1rem 1.25rem; border: none; background: none; cursor: pointer; color: var(--text-muted); white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .nav-btn.active { color: var(--navy); border-bottom-color: var(--navy); }
+  .nav-btn:hover { color: var(--navy); }
+
+  /* Main */
+  .main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* Sections */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Phase header */
+  .phase-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+  .phase-num { width: 36px; height: 36px; background: var(--navy); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .phase-title { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; }
+  .phase-sub { font-size: 13px; color: var(--text-muted); }
+
+  /* Cards */
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+  .card-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--navy); margin-bottom: 1rem; }
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  
+  /* Steps */
+  .step { display: flex; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+  .step:last-child { border-bottom: none; }
+  .step-check { width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 50%; cursor: pointer; flex-shrink: 0; margin-top: 2px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+  .step-check.done { background: var(--green); border-color: var(--green); }
+  .step-check.done::after { content: '✓'; color: white; font-size: 12px; font-weight: 700; }
+  .step-content { flex: 1; }
+  .step-title { font-weight: 500; font-size: 15px; margin-bottom: 2px; }
+  .step-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .step-tag { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; margin-left: 8px; }
+  .tag-free { background: #e8f5e9; color: #2e7d32; }
+  .tag-cost { background: #fff3e0; color: #e65100; }
+  .tag-urgent { background: #fce4ec; color: #c62828; }
+  .tag-build { background: #e8eaf6; color: #283593; }
+
+  /* Priority alert */
+  .alert { border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem; font-size: 14px; line-height: 1.6; }
+  .alert-warn { background: #fff8e1; border-left: 3px solid var(--amber); }
+  .alert-good { background: #e8f5e9; border-left: 3px solid var(--green); }
+  .alert-info { background: #e3f2fd; border-left: 3px solid #1976d2; }
+  .alert strong { font-weight: 600; }
+
+  /* Metrics row */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .metric { background: var(--navy); color: white; border-radius: 10px; padding: 1rem; }
+  .metric .val { font-size: 1.5rem; font-weight: 600; }
+  .metric .lbl { font-size: 11px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+  .metric.green { background: var(--green); }
+  .metric.amber { background: var(--amber); }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .td-good { color: var(--green); font-weight: 600; }
+  .td-warn { color: var(--amber); font-weight: 600; }
+  .td-bad { color: var(--red); font-weight: 600; }
+  tr.highlight { background: #f0f7ff; }
+
+  /* SVG Floor plan */
+  .floorplan-wrap { background: #f8f8f5; border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; text-align: center; }
+  .floorplan-legend { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 1rem; font-size: 12px; color: var(--text-muted); }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+
+  /* ROI Calculator */
+  .roi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .input-group { margin-bottom: 1rem; }
+  .input-group label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 5px; }
+  .input-group input, .input-group select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 15px; background: white; color: var(--text); }
+  .roi-result { background: var(--navy); color: white; border-radius: 12px; padding: 1.5rem; }
+  .roi-result h3 { font-family: 'DM Serif Display', serif; font-size: 1.4rem; font-weight: 400; margin-bottom: 1rem; }
+  .roi-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 14px; }
+  .roi-row:last-child { border-bottom: none; }
+  .roi-total { font-size: 1.4rem; font-weight: 600; color: var(--green-light); margin-top: 0.5rem; }
+
+  /* HOA checklist */
+  .hoa-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .hoa-item:last-child { border-bottom: none; }
+  .hoa-status { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+  .hoa-status.check { background: #e8f5e9; border: 2px solid var(--green); }
+  .hoa-status.unknown { background: #fff3e0; border: 2px solid var(--amber); }
+  .hoa-text { flex: 1; font-size: 14px; }
+  .hoa-text strong { display: block; font-weight: 500; }
+  .hoa-text span { font-size: 12px; color: var(--text-muted); }
+
+  /* Pricing table interactive */
+  .price-slider { margin-bottom: 1.5rem; }
+  .price-slider label { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; }
+  .price-slider label span { font-weight: 600; color: var(--text); }
+  .price-slider input[type=range] { width: 100%; accent-color: var(--navy); }
+
+  /* Listing template */
+  .listing-box { background: #fafafa; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; font-size: 14px; line-height: 1.7; }
+  .listing-box h4 { font-size: 16px; font-weight: 600; color: var(--navy); margin-bottom: 0.5rem; }
+  .copy-btn { font-size: 12px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 5px; background: white; cursor: pointer; float: right; font-family: 'DM Sans', sans-serif; }
+  .copy-btn:hover { background: var(--cream); }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 2rem; }
+  .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .tl-item { position: relative; padding-bottom: 1.5rem; }
+  .tl-dot { position: absolute; left: -2rem; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--navy); border: 3px solid var(--cream); }
+  .tl-dot.green { background: var(--green); }
+  .tl-dot.amber { background: var(--amber); }
+  .tl-time { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+  .tl-title { font-weight: 500; font-size: 15px; }
+  .tl-desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Sleeping chart */
+  .sleep-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .sleep-row:last-child { border-bottom: none; }
+  .sleep-icon { font-size: 20px; width: 30px; text-align: center; }
+  .sleep-name { font-weight: 500; font-size: 14px; flex: 1; }
+  .sleep-count { font-size: 13px; color: var(--text-muted); }
+  .sleep-ppl { display: flex; gap: 4px; }
+  .person { width: 20px; height: 20px; background: var(--navy); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; opacity: 0.7; }
+  .person.half { opacity: 0.3; }
+
+  /* Amenity grid */
+  .amenity-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .amenity { background: var(--cream); border-radius: 8px; padding: 10px 12px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .amenity .ico { font-size: 16px; }
+  .amenity.highlight { background: var(--navy); color: white; }
+
+  @media (max-width: 600px) {
+    .header h1 { font-size: 1.8rem; }
+    .metrics { grid-template-columns: 1fr 1fr; }
+    .card-grid { grid-template-columns: 1fr; }
+    .roi-grid { grid-template-columns: 1fr; }
+    .amenity-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-tag">TGM Group LLC — STR Property Playbook</div>
+    <h1>382 Stevens Ln<br><em>Livingston, TX 77351</em></h1>
+    <div class="header-sub">3 bed · 2 bath · ~1,700 sqft · dog-friendly · boat ramp · fenced yard</div>
+    <div class="header-stats">
+      <div class="hstat"><div class="val">$19,899</div><div class="lbl">2025 Revenue</div></div>
+      <div class="hstat"><div class="val">$29K+</div><div class="lbl">Market Avg</div></div>
+      <div class="hstat"><div class="val">4.8★</div><div class="lbl">Rating</div></div>
+      <div class="hstat"><div class="val">~$9K</div><div class="lbl">Gap to Close</div></div>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" onclick="showSection('overview')">Overview</button>
+    <button class="nav-btn" onclick="showSection('listing')">Listing Fixes</button>
+    <button class="nav-btn" onclick="showSection('pricing')">Pricing</button>
+    <button class="nav-btn" onclick="showSection('floorplan')">Floor Plan</button>
+    <button class="nav-btn" onclick="showSection('build')">Build Plan</button>
+    <button class="nav-btn" onclick="showSection('hoa')">HOA & Permits</button>
+    <button class="nav-btn" onclick="showSection('ops')">Operations</button>
+    <button class="nav-btn" onclick="showSection('timeline')">Master Timeline</button>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="overview">
+    <div class="phase-header">
+      <div class="phase-num">0</div>
+      <div>
+        <div class="phase-title">Where You Actually Stand</div>
+        <div class="phase-sub">Honest baseline before any changes</div>
+      </div>
+    </div>
+
+    <div class="alert alert-warn">
+      <strong>The real diagnosis:</strong> Your property isn't underperforming because of your rate. It's underperforming because of bad photos, an unoptimized listing, and long-term stays eating your peak weekends. Fix those three things before spending a dollar on construction.
+    </div>
+
+    <div class="metrics">
+      <div class="metric"><div class="val">~9</div><div class="lbl">Short stays in 2025</div></div>
+      <div class="metric amber"><div class="val">6 mo</div><div class="lbl">Long-term blocks</div></div>
+      <div class="metric green"><div class="val">$2,813</div><div class="lbl">True annual ops cost</div></div>
+      <div class="metric"><div class="val">~18</div><div class="lbl">Peak nights booked</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">2025 Revenue Breakdown — What Actually Happened</div>
+      <table>
+        <tr><th>Period</th><th>Type</th><th>Nights</th><th>Revenue</th><th>Assessment</th></tr>
+        <tr><td>May 15–Jul 6</td><td>6 short stays</td><td>~18</td><td>~$5,760</td><td class="td-good">Good</td></tr>
+        <tr><td>Jul 7–24</td><td>Gap (vacant)</td><td>17</td><td>$0</td><td class="td-warn">Lost ~$2,700</td></tr>
+        <tr><td>Jul 25–Aug 2</td><td>Personal use</td><td>9</td><td>$0</td><td class="td-warn">Personal choice</td></tr>
+        <tr><td>Aug end</td><td>1 weekend stay</td><td>2</td><td>~$520</td><td class="td-good">OK</td></tr>
+        <tr class="highlight"><td>Sep 1–Nov 1</td><td>Long-term stay</td><td>61</td><td>~$4,900</td><td class="td-bad">Ate fall season</td></tr>
+        <tr><td>Nov–Dec</td><td>Mixed stays</td><td>~20</td><td>~$7,200</td><td class="td-good">Decent</td></tr>
+        <tr><td>Jan–Mar 2025</td><td>Long-term</td><td>~90</td><td>~$7,350</td><td class="td-warn">Filled dead months</td></tr>
+      </table>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-title">Your Real Advantages</div>
+        <div class="amenity-grid">
+          <div class="amenity highlight"><span class="ico">🐕</span> Dog-friendly</div>
+          <div class="amenity highlight"><span class="ico">🏡</span> Fenced yard</div>
+          <div class="amenity highlight"><span class="ico">⛵</span> Boat ramp</div>
+          <div class="amenity"><span class="ico">👶</span> Crib available</div>
+          <div class="amenity"><span class="ico">🛋️</span> Sleeps 10</div>
+          <div class="amenity"><span class="ico">🏠</span> Modern interior</div>
+          <div class="amenity"><span class="ico">💰</span> Competitive rate</div>
+          <div class="amenity"><span class="ico">⭐</span> 4.8 rating</div>
+          <div class="amenity"><span class="ico">🌳</span> Large yard</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Your Gaps vs Competition</div>
+        <div class="step"><div class="step-content"><div class="step-title">Photos are old and weak</div><div class="step-desc">Biggest single fix. Professional photos = immediate ranking boost and higher click-through rate.</div></div></div>
+        <div class="step"><div class="step-content"><div class="step-title">Not on the water</div><div class="step-desc">Real ceiling on rate vs lakefront. Offset with yard, dog-friendly, and value positioning.</div></div></div>
+        <div class="step"><div class="step-content"><div class="step-title">No pool</div><div class="step-desc">Nice to have but not required. Liability + cleaning cost likely outweigh revenue gain at this stage.</div></div></div>
+        <div class="step"><div class="step-content"><div class="step-title">Kitchen + bath dated</div><div class="step-desc">Worth doing but after photos. Don't delay photos waiting for the reno.</div></div></div>
+      </div>
+    </div>
+
+    <div class="alert alert-good">
+      <strong>What's working:</strong> Your monthly strategy for Nov–Feb dead months is correct. Long-term in dead season = smart. Long-term in Sep–Oct = costly. The cleaner reliability is good but standards need raising. Your 4.8 rating is your most valuable asset — protect it.
+    </div>
+  </div>
+
+  <!-- LISTING FIXES -->
+  <div class="section" id="listing">
+    <div class="phase-header">
+      <div class="phase-num">1</div>
+      <div>
+        <div class="phase-title">Listing Optimization</div>
+        <div class="phase-sub">Zero capital required — do this first, do this now</div>
+      </div>
+    </div>
+
+    <div class="alert alert-urgent alert-warn">
+      <strong>Urgent:</strong> Peak season starts in weeks. April is your only booking. Every day without optimized photos and a title is revenue you won't recover.
+    </div>
+
+    <div class="card">
+      <div class="card-title">Photo Priority List — Shoot These in Order</div>
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Hero shot — yard + house exterior, golden hour <span class="step-tag tag-urgent">Shot #1</span></div>
+          <div class="step-desc">This is your thumbnail. Guests decide in 2 seconds. Shoot late afternoon when light hits the yard. Show the fence. If there's any lake or trees visible in the background, make sure they're in the frame.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">The fenced yard — wide shot from corner <span class="step-tag tag-urgent">Dog owner bait</span></div>
+          <div class="step-desc">Dog owners filter specifically for fenced yards. Make this photo unmistakable. Get down low if needed. Show the whole yard. This one photo will drive bookings from dog owners who can't find this anywhere else.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Boat ramp or waterfront access — any visible water</div>
+          <div class="step-desc">Even a path to the water or a ramp shot. This differentiates from landlocked listings. Guests searching "boat ramp" need to see it.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Living room — wide angle, decluttered, all lights on</div>
+          <div class="step-desc">Every lamp, every overhead light, every natural light source. Shoot from the corner. Show scale — groups are looking for space.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Master bedroom — made bed, no clutter, all lights on</div>
+          <div class="step-desc">King bed looks impressive. Fresh white linens photograph best.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Both queen bedrooms, both bathrooms, kitchen</div>
+          <div class="step-desc">Even if dated — clean and bright beats old and dark. Guests need to see all spaces. A dirty counter or dim bathroom kills bookings.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Outdoor entertaining areas, fire pit, any extras</div>
+          <div class="step-desc">Anything guests can do outside. Lake house guests live outside. Show it.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Suggested Listing Title</div>
+      <div class="listing-box">
+        <button class="copy-btn" onclick="copyText('title1')">Copy</button>
+        <div id="title1">🐕 Dog-Friendly Lake House · Fenced Yard · Boat Ramp · Sleeps 10</div>
+      </div>
+      <div style="margin-top:10px;"></div>
+      <div class="listing-box">
+        <button class="copy-btn" onclick="copyText('title2')">Copy</button>
+        <div id="title2">Spacious Lake Livingston Retreat · Fenced Yard · Boat Ramp · Pets Welcome</div>
+      </div>
+      <div class="alert alert-info" style="margin-top:1rem;">
+        <strong>Why these work:</strong> Dog-friendly + fenced yard is your #1 differentiator. Guests with dogs filter for this and there are very few fenced options near water. Lead with it. "Sleeps 10" puts you in group search results. Boat ramp appears in outdoor/fishing searches.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Description — Opening Hook (most important paragraph)</div>
+      <div class="listing-box">
+        <button class="copy-btn" onclick="copyText('desc1')">Copy</button>
+        <p id="desc1">Bring the whole crew — and the dogs. This spacious 3-bedroom lake house near Lake Livingston is one of the few pet-friendly properties in the area with a fully fenced yard, making it the go-to choice for families and dog owners who want to actually relax. With a private boat ramp, room for up to 10 guests, and a modern interior designed for comfort, you get everything the waterfront listings offer — at a price that makes sense for a full group getaway.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Amenity Tags to Make Sure Are Enabled on Airbnb</div>
+      <div class="amenity-grid">
+        <div class="amenity highlight"><span class="ico">✓</span> Pets allowed</div>
+        <div class="amenity highlight"><span class="ico">✓</span> Fenced yard</div>
+        <div class="amenity highlight"><span class="ico">✓</span> Boat access</div>
+        <div class="amenity highlight"><span class="ico">✓</span> Crib / baby gear</div>
+        <div class="amenity"><span class="ico">✓</span> Free parking</div>
+        <div class="amenity"><span class="ico">✓</span> WiFi</div>
+        <div class="amenity"><span class="ico">✓</span> Kitchen</div>
+        <div class="amenity"><span class="ico">✓</span> Washer / dryer</div>
+        <div class="amenity"><span class="ico">✓</span> Air conditioning</div>
+        <div class="amenity"><span class="ico">✓</span> BBQ grill</div>
+        <div class="amenity"><span class="ico">+</span> Fire pit (if you have one)</div>
+        <div class="amenity"><span class="ico">+</span> Outdoor seating</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING -->
+  <div class="section" id="pricing">
+    <div class="phase-header">
+      <div class="phase-num">2</div>
+      <div>
+        <div class="phase-title">Pricing Strategy</div>
+        <div class="phase-sub">Built around your actual weekend-only demand reality</div>
+      </div>
+    </div>
+
+    <div class="alert alert-info">
+      <strong>Key insight:</strong> You're a weekend destination market. Weekdays don't book. Your entire revenue model is built on ~52 weekends (156 Fri/Sat/Sun nights) plus strategic long-term stays in true dead months only.
+    </div>
+
+    <div class="card">
+      <div class="card-title">Recommended Rate Structure</div>
+      <table>
+        <tr><th>Type</th><th>Current</th><th>Recommended</th><th>Why</th></tr>
+        <tr><td>Weeknight (Mon–Thu)</td><td>$160</td><td>$130–$140</td><td>Reduce to attract any weekday demand without leaving it empty at $160</td></tr>
+        <tr class="highlight"><td><strong>Weekend (Fri–Sun)</strong></td><td>$160</td><td class="td-good"><strong>$175–$195</strong></td><td>Your real revenue. Never discount weekends.</td></tr>
+        <tr><td>Peak summer weekends (Jun–Aug)</td><td>$160</td><td class="td-good">$200–$225</td><td>Lake demand peaks. Competitors charge this.</td></tr>
+        <tr><td>Holidays (Memorial Day, 4th, Labor Day)</td><td>$160</td><td class="td-good">$225–$250</td><td>3-night minimum. Highest demand of the year.</td></tr>
+        <tr><td>Weekly</td><td>$887</td><td>$990–$1,050</td><td>Tighten discount to 10% off nightly, not 23%</td></tr>
+        <tr><td>Monthly (Nov–Feb only)</td><td>$2,450</td><td>$2,600–$2,800</td><td>Dead season — monthly is correct strategy here</td></tr>
+        <tr><td>Monthly (Mar–Oct)</td><td>$2,450</td><td class="td-bad">Do not offer</td><td>Blocks your bookable weekends</td></tr>
+        <tr><td>Cleaning fee</td><td>$200</td><td>$200</td><td>Correct. Always charge. Never eat it.</td></tr>
+        <tr><td>Pet fee</td><td>Unknown</td><td>$25–$50/stay</td><td>Dog owners expect it. Add it.</td></tr>
+        <tr><td>Extra guests over 6</td><td>$0</td><td>$15–20/night</td><td>Groups of 8–10 should pay slightly more</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Revenue Simulator</div>
+      <div class="price-slider">
+        <label>Weekend nightly rate <span id="wkndOut">$185</span></label>
+        <input type="range" min="140" max="250" step="5" value="185" id="wkndRate" oninput="calcRevenue()">
+      </div>
+      <div class="price-slider">
+        <label>Weekend occupancy (of 52 weekends) <span id="wkndOccOut">65%</span></label>
+        <input type="range" min="30" max="90" step="5" value="65" id="wkndOcc" oninput="calcRevenue()">
+      </div>
+      <div class="price-slider">
+        <label>Monthly stays (Nov–Feb, how many months) <span id="moOut">2</span></label>
+        <input type="range" min="0" max="4" step="1" value="2" id="moStays" oninput="calcRevenue()">
+      </div>
+      <div class="price-slider">
+        <label>Monthly rate <span id="moRateOut">$2,600</span></label>
+        <input type="range" min="2000" max="4000" step="50" value="2600" id="moRate" oninput="calcRevenue()">
+      </div>
+      <div class="card" style="background:#f0f7ff; border-color:#b3d4f5;">
+        <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:1rem; text-align:center;">
+          <div><div style="font-size:1.6rem; font-weight:600; color:var(--navy);" id="rWeekend">$0</div><div style="font-size:12px; color:var(--text-muted);">Weekend revenue</div></div>
+          <div><div style="font-size:1.6rem; font-weight:600; color:var(--green);" id="rMonthly">$0</div><div style="font-size:12px; color:var(--text-muted);">Monthly stays revenue</div></div>
+          <div><div style="font-size:1.6rem; font-weight:600; color:var(--amber);" id="rCleaning">$0</div><div style="font-size:12px; color:var(--text-muted);">Cleaning fee income</div></div>
+        </div>
+        <div style="text-align:center; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+          <div style="font-size:2rem; font-weight:700; color:var(--navy);" id="rTotal">$0</div>
+          <div style="font-size:13px; color:var(--text-muted);">Projected gross revenue</div>
+          <div style="font-size:13px; color:var(--green); margin-top:4px;" id="rNet"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Seasonal Calendar — When to Accept What</div>
+      <table>
+        <tr><th>Month</th><th>Demand</th><th>Accept Monthly?</th><th>Target Rate</th></tr>
+        <tr><td>Jan–Feb</td><td>Dead</td><td class="td-good">Yes</td><td>$2,600/mo or weekend only</td></tr>
+        <tr><td>March</td><td>Low</td><td class="td-warn">Maybe</td><td>$160 weekends</td></tr>
+        <tr><td>April</td><td>Building</td><td class="td-bad">No</td><td>$165–$175 weekends</td></tr>
+        <tr><td>May</td><td>High</td><td class="td-bad">Never</td><td>$185–$200 weekends</td></tr>
+        <tr><td>Jun–Aug</td><td>Peak</td><td class="td-bad">Never</td><td>$200–$225 weekends, $250 holidays</td></tr>
+        <tr><td>Sep–Oct</td><td>Shoulder</td><td class="td-bad">No</td><td>$165–$180 weekends</td></tr>
+        <tr><td>Nov</td><td>Slowing</td><td class="td-warn">Maybe</td><td>$140–$160 weekends</td></tr>
+        <tr><td>December</td><td>Holiday spikes</td><td class="td-bad">No</td><td>$185+ Christmas week</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- FLOOR PLAN -->
+  <div class="section" id="floorplan">
+    <div class="phase-header">
+      <div class="phase-num">3</div>
+      <div>
+        <div class="phase-title">Property Sketch</div>
+        <div class="phase-sub">Current layout + proposed additions</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Current House — ~1,700 sqft</div>
+      <div class="floorplan-wrap">
+        <svg viewBox="0 0 700 420" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:700px;">
+          <!-- House outline -->
+          <rect x="80" y="40" width="440" height="300" fill="#f8f8f5" stroke="#0d2d4a" stroke-width="3" rx="4"/>
+          
+          <!-- Master bedroom -->
+          <rect x="80" y="40" width="180" height="120" fill="#e8f0f8" stroke="#0d2d4a" stroke-width="1.5"/>
+          <text x="170" y="90" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#0d2d4a" font-weight="500">Master</text>
+          <text x="170" y="106" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#6b6b6b">King bed</text>
+          <text x="170" y="120" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#6b6b6b">~200 sqft</text>
+          <!-- Bed symbol -->
+          <rect x="130" y="48" width="80" height="45" fill="white" stroke="#0d2d4a" stroke-width="1" rx="3"/>
+          <rect x="130" y="48" width="80" height="15" fill="#b8cce4" rx="2"/>
+
+          <!-- Bedroom 2 -->
+          <rect x="80" y="160" width="160" height="110" fill="#e8f5e8" stroke="#0d2d4a" stroke-width="1.5"/>
+          <text x="160" y="205" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#0d2d4a" font-weight="500">Bedroom 2</text>
+          <text x="160" y="220" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#6b6b6b">Queen bed</text>
+          <text x="160" y="235" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#6b6b6b">~160 sqft</text>
+
+          <!-- Bedroom 3 -->
+          <rect x="80" y="270" width="160" height="70" fill="#e8f5e8" stroke="#0d2d4a" stroke-width="1.5"/>
+          <text x="160" y="300" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#0d2d4a" font-weight="500">Bedroom 3</text>
+          <text x="160" y="315" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#6b6b6b">Queen bed</text>
+
+          <!-- Bathrooms -->
+          <rect x="260" y="40" width="80" height="70" fill="#e0f4f4" stroke="#0d2d4a" stroke-width="1.5"/>
+          <text x="300" y="72" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#0d2d4a">Bath 1</text>
+          <rect x="240" y="160" width="80" height="60" fill="#e0f4f4" stroke="#0d2d4a" stroke-width="1.5"/>
+          <text x="280" y="195" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#0d2d4a">Bath 2</text>
+
+          <!-- Living room -->
+          <rect x="340" y="110" width="180" height="150" fill="#fff8e8" stroke="#0d2d4a" stroke-width="1.5"/>
+          <text x="430" y="178" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#0d2d4a" font-weight="500">Living Room</text>
+          <text x="430" y="196" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#6b6b6b">3 couches · ~280 sqft</text>
+          <!-- Couch symbols -->
+          <rect x="355" y="120" width="70" height="25" fill="#d4870a" rx="3" opacity="0.5"/>
+          <rect x="355" y="148" width="70" height="25" fill="#d4870a" rx="3" opacity="0.5"/>
+          <rect x="430" y="120" width="80" height="20" fill="#d4870a" rx="3" opacity="0.5"/>
+
+          <!-- Kitchen -->
+          <rect x="340" y="40" width="180" height="70" fill="#f0e8f8" stroke="#0d2d4a" stroke-width="1.5"/>
+          <text x="430" y="72" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#0d2d4a" font-weight="500">Kitchen / Dining</text>
+          <text x="430" y="88" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#6b6b6b">Pending reno</text>
+
+          <!-- Hallway -->
+          <rect x="240" y="40" width="100" height="70" fill="#f0f0ec" stroke="#0d2d4a" stroke-width="1"/>
+          <text x="290" y="78" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#8b8b8b">Hallway</text>
+
+          <!-- Laundry -->
+          <rect x="340" y="260" width="100" height="80" fill="#efe8f8" stroke="#0d2d4a" stroke-width="1.5"/>
+          <text x="390" y="298" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#0d2d4a">Laundry</text>
+          <text x="390" y="313" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#6b6b6b">W/D</text>
+
+          <!-- Entrance -->
+          <rect x="440" y="260" width="80" height="80" fill="#f5f5f0" stroke="#0d2d4a" stroke-width="1.5"/>
+          <text x="480" y="298" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#0d2d4a">Entry</text>
+
+          <!-- Front door -->
+          <rect x="480" y="337" width="40" height="8" fill="#0d2d4a" rx="2"/>
+          <text x="500" y="358" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#0d2d4a">Front door</text>
+
+          <!-- YARD -->
+          <rect x="80" y="355" width="440" height="55" fill="#e8f5e8" stroke="#4a9e49" stroke-width="2" rx="4" stroke-dasharray="6,3"/>
+          <text x="300" y="378" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#4a9e49" font-weight="600">Fenced Yard — Key Differentiator</text>
+          <text x="300" y="396" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#4a9e49">Fully enclosed · Dog-friendly · Large</text>
+
+          <!-- Compass -->
+          <circle cx="650" cy="70" r="25" fill="white" stroke="#0d2d4a" stroke-width="1"/>
+          <text x="650" y="60" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#0d2d4a" font-weight="700">N</text>
+          <line x1="650" y1="48" x2="650" y2="58" stroke="#0d2d4a" stroke-width="2"/>
+
+          <!-- Scale note -->
+          <text x="650" y="380" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#8b8b8b">~1,700 sqft</text>
+          <text x="650" y="393" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#8b8b8b">Not to scale</text>
+        </svg>
+        <div class="floorplan-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#e8f0f8;border:1px solid #0d2d4a;"></div> Master</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#e8f5e8;border:1px solid #0d2d4a;"></div> Bedrooms</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#e0f4f4;border:1px solid #0d2d4a;"></div> Bathrooms</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#fff8e8;border:1px solid #0d2d4a;"></div> Living</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#4a9e49;"></div> Fenced yard</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sleeping Capacity — Honest Breakdown for 10 Guests</div>
+      <div class="sleep-row">
+        <div class="sleep-icon">🛏️</div>
+        <div class="sleep-name">Master bedroom — King bed</div>
+        <div class="sleep-count" style="color:var(--green); font-weight:600;">2 guests</div>
+      </div>
+      <div class="sleep-row">
+        <div class="sleep-icon">🛏️</div>
+        <div class="sleep-name">Bedroom 2 — Queen bed</div>
+        <div class="sleep-count" style="color:var(--green); font-weight:600;">2 guests</div>
+      </div>
+      <div class="sleep-row">
+        <div class="sleep-icon">🛏️</div>
+        <div class="sleep-name">Bedroom 3 — Queen bed</div>
+        <div class="sleep-count" style="color:var(--green); font-weight:600;">2 guests</div>
+      </div>
+      <div class="sleep-row">
+        <div class="sleep-icon">🛋️</div>
+        <div class="sleep-name">Living room — 3 couches (sofa sleepers or pull-outs)</div>
+        <div class="sleep-count" style="color:var(--amber); font-weight:600;">2–3 guests</div>
+      </div>
+      <div class="sleep-row">
+        <div class="sleep-icon">💤</div>
+        <div class="sleep-name">Air mattresses (2 available)</div>
+        <div class="sleep-count" style="color:var(--amber); font-weight:600;">2 guests</div>
+      </div>
+      <div class="sleep-row" style="background:#f0f7f0; margin: 0 -1.5rem; padding: 12px 1.5rem; border-radius: 0 0 12px 12px;">
+        <div class="sleep-icon">👥</div>
+        <div class="sleep-name" style="font-weight:600;">Advertise as: Sleeps 10</div>
+        <div class="sleep-count" style="color:var(--green); font-weight:700; font-size:16px;">10 guests</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Proposed Addition — MIL Suite + Garage (Site Plan)</div>
+      <div class="floorplan-wrap">
+        <svg viewBox="0 0 700 500" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:700px;">
+          <!-- Existing house footprint -->
+          <rect x="200" y="150" width="300" height="200" fill="#f0f0ec" stroke="#0d2d4a" stroke-width="2" rx="4"/>
+          <text x="350" y="245" text-anchor="middle" font-family="DM Sans" font-size="14" fill="#0d2d4a" font-weight="600">Existing House</text>
+          <text x="350" y="264" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#6b6b6b">~1,700 sqft · 3bd/2ba</text>
+
+          <!-- Existing yard (front) -->
+          <rect x="200" y="350" width="300" height="100" fill="#e8f5e8" stroke="#4a9e49" stroke-width="2" rx="4" stroke-dasharray="6,3"/>
+          <text x="350" y="398" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#4a9e49">Fenced yard (existing)</text>
+
+          <!-- PROPOSED: Garage + MIL Suite -->
+          <rect x="520" y="150" width="160" height="200" fill="#e8eaf6" stroke="#283593" stroke-width="2.5" rx="4" stroke-dasharray="8,3"/>
+          <text x="600" y="220" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#283593" font-weight="600">Garage</text>
+          <text x="600" y="238" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#283593">2-car · 480 sqft</text>
+          <rect x="520" y="280" width="160" height="70" fill="#dce8f0" stroke="#283593" stroke-width="2" rx="2" stroke-dasharray="6,3"/>
+          <text x="600" y="312" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#283593" font-weight="500">MIL Suite</text>
+          <text x="600" y="328" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#283593">1bd/1ba · ~400 sqft</text>
+
+          <!-- PROPOSED: Driveway extension -->
+          <rect x="500" y="350" width="180" height="60" fill="#f5f5f0" stroke="#8b8b8b" stroke-width="1" rx="2" stroke-dasharray="4,2"/>
+          <text x="590" y="385" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#8b8b8b">Extended driveway</text>
+
+          <!-- Connection path -->
+          <rect x="500" y="200" width="20" height="60" fill="#c5cae9" stroke="#283593" stroke-width="1"/>
+          <text x="490" y="235" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#283593" transform="rotate(-90 490 235)">Breezeway</text>
+
+          <!-- Road -->
+          <rect x="80" y="450" width="540" height="40" fill="#d0d0c8" stroke="#8b8b8b" stroke-width="1" rx="2"/>
+          <text x="350" y="476" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#6b6b6b">Stevens Ln</text>
+          <line x1="350" y1="450" x2="350" y2="490" stroke="white" stroke-width="2" stroke-dasharray="8,6"/>
+
+          <!-- Boat ramp indicator -->
+          <rect x="20" y="150" width="160" height="200" fill="#dceefa" stroke="#1976d2" stroke-width="1.5" rx="4" stroke-dasharray="6,3"/>
+          <text x="100" y="238" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#1976d2" font-weight="500">Boat ramp /</text>
+          <text x="100" y="256" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#1976d2" font-weight="500">Water access</text>
+          <text x="100" y="274" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#1976d2">(approximate)</text>
+
+          <!-- Labels -->
+          <rect x="520" y="120" width="12" height="12" fill="#e8eaf6" stroke="#283593" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <text x="537" y="131" font-family="DM Sans" font-size="11" fill="#283593">= Proposed addition</text>
+          <rect x="520" y="138" width="12" height="12" fill="#f0f0ec" stroke="#0d2d4a" stroke-width="1.5"/>
+          <text x="537" y="149" font-family="DM Sans" font-size="11" fill="#0d2d4a">= Existing structure</text>
+
+          <!-- North -->
+          <circle cx="660" cy="75" r="22" fill="white" stroke="#0d2d4a" stroke-width="1"/>
+          <text x="660" y="68" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#0d2d4a" font-weight="700">N</text>
+          <line x1="660" y1="56" x2="660" y2="65" stroke="#0d2d4a" stroke-width="2"/>
+          <text x="660" y="490" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#8b8b8b">Conceptual only · Not to scale</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUILD PLAN -->
+  <div class="section" id="build">
+    <div class="phase-header">
+      <div class="phase-num">4</div>
+      <div>
+        <div class="phase-title">Build Plan — MIL Suite + Garage</div>
+        <div class="phase-sub">ROI analysis and construction requirements</div>
+      </div>
+    </div>
+
+    <div class="alert alert-warn">
+      <strong>Order of operations:</strong> Do NOT start this build until you've run one fully optimized season. Prove the property, then invest. Photos + listing optimization cost under $500 and could recover $5–8K in the first season alone.
+    </div>
+
+    <div class="card">
+      <div class="card-title">ROI Calculator — MIL Suite + Garage</div>
+      <div class="roi-grid">
+        <div>
+          <div class="input-group">
+            <label>Estimated build cost ($)</label>
+            <input type="number" id="buildCost" value="85000" oninput="calcROI()">
+          </div>
+          <div class="input-group">
+            <label>MIL Suite — monthly STR income ($)</label>
+            <input type="number" id="milIncome" value="1400" oninput="calcROI()">
+          </div>
+          <div class="input-group">
+            <label>MIL Suite — months occupied per year</label>
+            <input type="number" id="milMonths" value="8" max="12" oninput="calcROI()">
+          </div>
+          <div class="input-group">
+            <label>Garage — monthly income (storage/rental)</label>
+            <input type="number" id="garageIncome" value="200" oninput="calcROI()">
+          </div>
+          <div class="input-group">
+            <label>Main house revenue increase after build (%)</label>
+            <input type="number" id="houseBoost" value="15" oninput="calcROI()">
+          </div>
+        </div>
+        <div class="roi-result">
+          <h3>Projected Returns</h3>
+          <div class="roi-row"><span>MIL Suite annual income</span><span id="rMIL">$0</span></div>
+          <div class="roi-row"><span>Garage annual income</span><span id="rGarage">$0</span></div>
+          <div class="roi-row"><span>Main house revenue boost</span><span id="rHouseBoost">$0</span></div>
+          <div class="roi-row"><span>Total new annual income</span><span id="rAnnual">$0</span></div>
+          <div class="roi-row"><span>Build cost</span><span id="rCost">$0</span></div>
+          <div class="roi-row"><span>Payback period</span><span id="rPayback" class="roi-total">0 yrs</span></div>
+          <div class="roi-row"><span>10-year net return</span><span id="r10yr" style="color:#6ab869; font-weight:600;">$0</span></div>
+          <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.15); font-size:12px; color:rgba(255,255,255,0.5);">
+            Does not include property value appreciation or equity gains from improvement.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Build Specs — What You Actually Need</div>
+      <div class="card-grid">
+        <div>
+          <p style="font-weight:600; margin-bottom:10px; font-size:14px;">MIL Suite Requirements</p>
+          <div class="step"><div class="step-content"><div class="step-title">Minimum 400–500 sqft</div><div class="step-desc">1 bed, 1 full bath, kitchenette. Enough to feel like an independent space.</div></div></div>
+          <div class="step"><div class="step-content"><div class="step-title">Separate entrance required</div><div class="step-desc">Must not enter through main house. Guests need full privacy.</div></div></div>
+          <div class="step"><div class="step-content"><div class="step-title">Separate HVAC or mini-split</div><div class="step-desc">Independent climate control. Do not tie to main house system.</div></div></div>
+          <div class="step"><div class="step-content"><div class="step-title">Separate utility metering (optional but smart)</div><div class="step-desc">If renting long-term, separate meter protects you from tenant utility overuse.</div></div></div>
+        </div>
+        <div>
+          <p style="font-weight:600; margin-bottom:10px; font-size:14px;">Garage Requirements</p>
+          <div class="step"><div class="step-content"><div class="step-title">2-car minimum, ideally 24×24ft</div><div class="step-desc">Two bay doors. Enough for boat storage or vehicle + equipment.</div></div></div>
+          <div class="step"><div class="step-content"><div class="step-title">220V electrical panel stub-out</div><div class="step-desc">Future-proofs for EV charger, workshop tools, or TGM equipment storage.</div></div></div>
+          <div class="step"><div class="step-content"><div class="step-title">Insulated if MIL suite is above</div><div class="step-desc">If suite is above garage, garage must be insulated for temp regulation.</div></div></div>
+          <div class="step"><div class="step-content"><div class="step-title">Consider TGM Washers storage</div><div class="step-desc">If you ever consolidate operations, this garage could double as Houston-area equipment staging.</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Estimated Cost Ranges — Livingston TX Rural Construction</div>
+      <table>
+        <tr><th>Component</th><th>Low</th><th>Mid</th><th>High</th></tr>
+        <tr><td>MIL Suite (400–500 sqft)</td><td>$45,000</td><td>$65,000</td><td>$90,000</td></tr>
+        <tr><td>2-car garage (576 sqft)</td><td>$20,000</td><td>$32,000</td><td>$45,000</td></tr>
+        <tr><td>Permits + engineering</td><td>$2,000</td><td>$4,000</td><td>$8,000</td></tr>
+        <tr><td>Electrical hookup</td><td>$3,000</td><td>$5,000</td><td>$10,000</td></tr>
+        <tr><td>Plumbing (MIL suite)</td><td>$4,000</td><td>$7,000</td><td>$12,000</td></tr>
+        <tr class="highlight"><td><strong>Total estimated all-in</strong></td><td class="td-good"><strong>$74,000</strong></td><td class="td-warn"><strong>$113,000</strong></td><td class="td-bad"><strong>$165,000</strong></td></tr>
+      </table>
+      <div class="alert alert-info" style="margin-top:1rem;">
+        Rural East Texas construction is typically 20–30% cheaper than Houston metro. Get at least 3 bids. Your contractor relationship is your biggest cost lever here.
+      </div>
+    </div>
+  </div>
+
+  <!-- HOA & PERMITS -->
+  <div class="section" id="hoa">
+    <div class="phase-header">
+      <div class="phase-num">5</div>
+      <div>
+        <div class="phase-title">HOA & Permit Checklist</div>
+        <div class="phase-sub">Verify before you break ground on anything</div>
+      </div>
+    </div>
+
+    <div class="alert alert-warn">
+      <strong>Do these before any contractor conversation.</strong> Deed restrictions in Polk County lake communities can prohibit STR use, auxiliary structures, or commercial activity. Know your constraints first.
+    </div>
+
+    <div class="card">
+      <div class="card-title">HOA / Deed Restriction Research — Do This First</div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Pull your deed from Polk County Appraisal District</strong>
+          <span>Go to polkcad.org → search 382 Stevens Ln → download deed. Look for restrictive covenants, especially re: short-term rentals and accessory dwelling units (ADUs).</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Confirm whether Memorial Point UD has STR restrictions</strong>
+          <span>Your water provider is Memorial Point UD (it's on your bills). That's a municipal utility district — they may have deed restrictions attached to the subdivision. Call them directly.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Check for HOA — if one exists, get their CC&Rs</strong>
+          <span>Lake communities in Livingston often have informal HOAs. Even if you don't pay dues, deed restrictions may bind you. Ask neighbors or check with title company.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Verify STR is currently legal at your address</strong>
+          <span>Livingston city limits may have different rules than unincorporated Polk County. Confirm you're operating legally — most lake properties outside city limits are fine.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Check if ADU / guest house is permitted on your lot</strong>
+          <span>Polk County has setback requirements for accessory structures. Typically 5–10ft from property line minimum. Confirm your lot size allows the proposed footprint.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Permit Requirements — Polk County / City of Livingston</div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Building permit — required for any new structure over 200 sqft</strong>
+          <span>Contact Polk County Permits office. For unincorporated county land: (936) 327-6813. Expect 2–6 week approval timeline.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Electrical permit — required for new panel / hookup</strong>
+          <span>Must be pulled by licensed electrician. Your TGM connection with Trinity (TDLR apprentice) won't qualify for this — need a licensed electrician to pull the permit.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Plumbing permit — required for MIL suite bathroom/kitchen</strong>
+          <span>New septic capacity may be required if your current system is sized only for the main house. Get a septic inspection before finalizing plans.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Flood zone check — FEMA FIRM map</strong>
+          <span>Lake Livingston area has significant flood zone areas. Confirm your parcel's flood designation before building — it affects insurance, financing, and what you can build.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Septic capacity — confirm existing system supports ADU</strong>
+          <span>Adding a MIL suite adds load to your septic. Most systems in the area are sized for the main house only. May require expansion or second system.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">STR Tax & Business Obligations — Texas</div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Hotel Occupancy Tax — state + local</div><div class="step-desc">Airbnb collects and remits Texas state HOT (6%) automatically. But Polk County and City of Livingston may have additional local HOT. Confirm with your CPA whether you owe any local HOT Airbnb doesn't collect.</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Texas Sales Tax Permit — confirm STR is covered</div><div class="step-desc">You have your Texas Sales and Use Tax Permit for TGM. Confirm with your CPA whether STR income flows through TGM Group LLC or separate.</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Airbnb 1099-K — keep for your CPA</div><div class="step-desc">Airbnb will issue a 1099-K if you exceed $600 in annual payments. Ensure this reconciles to your reported income.</div></div></div>
+    </div>
+  </div>
+
+  <!-- OPERATIONS -->
+  <div class="section" id="ops">
+    <div class="phase-header">
+      <div class="phase-num">6</div>
+      <div>
+        <div class="phase-title">Operations Playbook</div>
+        <div class="phase-sub">Cleaning standards, guest experience, and protecting your 4.8 rating</div>
+      </div>
+    </div>
+
+    <div class="alert alert-warn">
+      <strong>Your 4.8 rating is your most valuable asset.</strong> One more dirty house incident during peak season and you drop to 4.6–4.7. Airbnb's algorithm buries listings below 4.7. The rating is worth more than saving $50 on a better cleaner.
+    </div>
+
+    <div class="card">
+      <div class="card-title">Cleaner Turnover Checklist — Room by Room</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:1rem;">Print this and require photos of each room before you confirm complete. No photo = not done.</p>
+
+      <p style="font-weight:600; font-size:13px; margin:1rem 0 0.5rem;">All Rooms</p>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Vacuum / sweep + mop all floors</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Wipe all surfaces, counters, nightstands</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Empty all trash cans + replace bag</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Check for items left by prior guests</div></div></div>
+
+      <p style="font-weight:600; font-size:13px; margin:1rem 0 0.5rem;">Bedrooms</p>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Strip and replace all linens — beds made hotel style</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Check under beds for trash or items</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Photo of each made bed — send before leaving</div><div class="step-desc">This is your confirmation. Required.</div></div></div>
+
+      <p style="font-weight:600; font-size:13px; margin:1rem 0 0.5rem;">Bathrooms</p>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Scrub toilet, sink, tub/shower</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Restock: toilet paper (2+ rolls), soap, shampoo, towels</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Clean mirror — no streaks</div></div></div>
+
+      <p style="font-weight:600; font-size:13px; margin:1rem 0 0.5rem;">Kitchen</p>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Dishes washed + put away (or run dishwasher and empty)</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Wipe stovetop, microwave inside + out, counters</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Check fridge — remove all prior guest food</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Restock: paper towels, dish soap, sponge, trash bags</div></div></div>
+
+      <p style="font-weight:600; font-size:13px; margin:1rem 0 0.5rem;">Exterior / Yard</p>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Pick up yard — no trash, no pet waste</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Check fire pit / grill — cleaned if used</div></div></div>
+      <div class="step"><div class="step-check" onclick="toggleCheck(this)"></div><div class="step-content"><div class="step-title">Final walkthrough photo — send to you before leaving</div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Guest Communication Templates</div>
+      <div class="listing-box" style="margin-bottom:10px;">
+        <button class="copy-btn" onclick="copyText('msg1')">Copy</button>
+        <strong style="display:block; margin-bottom:5px; font-size:13px;">Booking confirmation</strong>
+        <span id="msg1">Hi [Name]! So excited to host you at the lake house. Check-in is at 3pm and checkout is 11am. You'll find the door code in your Airbnb app closer to your arrival date. Don't hesitate to reach out if you have any questions — we want your stay to be perfect. 🐕 Bring the pups!</span>
+      </div>
+      <div class="listing-box">
+        <button class="copy-btn" onclick="copyText('msg2')">Copy</button>
+        <strong style="display:block; margin-bottom:5px; font-size:13px;">Day before check-in</strong>
+        <span id="msg2">Hey [Name]! Just a reminder you check in tomorrow at 3pm. Your door code is [CODE]. The fenced yard is ready for the dogs, and there's a boat ramp just [X] minutes from the house if you're bringing a boat. Have a great trip — reach out anytime if you need anything!</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Long-Term Guest Policy — When to Say No</div>
+      <div class="alert alert-info">The young adult situation (parents booked for 20-year-olds for 3 months, left house dirty) is a recoverable lesson. Here's how to prevent it going forward.</div>
+      <div class="step"><div class="step-content"><div class="step-title">No monthly bookings May–October, period</div><div class="step-desc">Block monthly pricing in your calendar for those months. Non-negotiable.</div></div></div>
+      <div class="step"><div class="step-content"><div class="step-title">For 30+ day stays, require a video call first</div><div class="step-desc">Anyone staying a month or more should speak with you. You'll know in 5 minutes if they're the right fit.</div></div></div>
+      <div class="step"><div class="step-content"><div class="step-title">Require a damage deposit for all monthly stays</div><div class="step-desc">Airbnb's standard policies may not cover damage from a dirty house. A separate damage deposit agreement gives you recourse.</div></div></div>
+      <div class="step"><div class="step-content"><div class="step-title">Midstay check-in at 30 days for multi-month</div><div class="step-desc">For a 2–3 month stay, do a quick walk-through or send your cleaner at the 30-day mark. Catch problems before they become disasters.</div></div></div>
+    </div>
+  </div>
+
+  <!-- MASTER TIMELINE -->
+  <div class="section" id="timeline">
+    <div class="phase-header">
+      <div class="phase-num">7</div>
+      <div>
+        <div class="phase-title">Master Timeline</div>
+        <div class="phase-sub">Everything in order — from today through the build</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot green"></div>
+          <div class="tl-time">This week — free</div>
+          <div class="tl-title">Update max guests to 10 on Airbnb</div>
+          <div class="tl-desc">5 minutes. Immediate search visibility boost. List sleeping arrangements honestly (3 beds + couches + air mattresses).</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot green"></div>
+          <div class="tl-time">This week — free</div>
+          <div class="tl-title">Update listing title to lead with dog-friendly + fenced yard</div>
+          <div class="tl-desc">Use the suggested title from the Listing tab. Add pet fee of $25–50/stay.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot green"></div>
+          <div class="tl-time">This week — free</div>
+          <div class="tl-title">Set weekend pricing rules in Airbnb</div>
+          <div class="tl-desc">Fri/Sat at $185–195. Peak summer (Jun–Aug) at $210–225. Holidays at $245. Takes 20 minutes in the pricing calendar.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot green"></div>
+          <div class="tl-time">This week — free</div>
+          <div class="tl-title">Block monthly stays May–October in your calendar now</div>
+          <div class="tl-desc">Never take a monthly stay during shoulder or peak season again. Close that option for those months permanently.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot amber"></div>
+          <div class="tl-time">Next 2 weeks — $200–400</div>
+          <div class="tl-title">Professional photography — book NOW</div>
+          <div class="tl-desc">Do not wait for the kitchen reno. Get photos done with the house as-is. A photographer who specializes in Airbnb/real estate is worth every dollar. Peak season starts in weeks.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot amber"></div>
+          <div class="tl-time">Next 2 weeks — free</div>
+          <div class="tl-title">Create cleaner photo checklist + require confirmation photos</div>
+          <div class="tl-desc">Print the cleaning checklist from the Operations tab. Walk your cleaner through it once in person. This protects your 4.8 rating.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot amber"></div>
+          <div class="tl-time">April–May</div>
+          <div class="tl-title">Pull deed + confirm STR legality and HOA rules</div>
+          <div class="tl-desc">polkcad.org for deed. Call Memorial Point UD. Confirm you're operating legally and understand what you can build before spending on plans.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot amber"></div>
+          <div class="tl-time">May–August</div>
+          <div class="tl-title">Run your first fully optimized peak season</div>
+          <div class="tl-desc">New photos, new title, correct pricing, no monthly blocks. Track every booking. This is your proof-of-concept for the build decision.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--amber);"></div>
+          <div class="tl-time">After peak season — $8–15K</div>
+          <div class="tl-title">Kitchen + bath renovation + reshoot photos</div>
+          <div class="tl-desc">Now the renovation makes sense. You'll have one full peak season of revenue to fund it and can reshoot for next year's listing.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" style="background:#283593;"></div>
+          <div class="tl-time">Late 2026 / Early 2027 — $75–115K</div>
+          <div class="tl-title">MIL Suite + Garage — if numbers justify it</div>
+          <div class="tl-desc">By this point you have real data on what the property generates. Use the ROI calculator in the Build tab with your actual numbers. Get 3 contractor bids. Pull permits before breaking ground.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" style="background:#283593;"></div>
+          <div class="tl-time">2027</div>
+          <div class="tl-title">VA loan home purchase window opens</div>
+          <div class="tl-desc">TGM Washers income fully seasoned. STR income with 2+ years history. MIL suite adding rental income. This is the version of the portfolio that qualifies you for the home you actually want.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Revenue Targets — Year by Year</div>
+      <table>
+        <tr><th>Year</th><th>What changes</th><th>Conservative</th><th>Optimistic</th></tr>
+        <tr><td>2025 (actual)</td><td>Baseline</td><td>$19,899</td><td>$19,899</td></tr>
+        <tr class="highlight"><td>2026 (this year)</td><td>Photos + listing + pricing</td><td class="td-warn">$24,000</td><td class="td-good">$31,000</td></tr>
+        <tr><td>2027</td><td>+ Kitchen/bath reno + reshoot</td><td class="td-warn">$28,000</td><td class="td-good">$38,000</td></tr>
+        <tr><td>2028</td><td>+ MIL suite income</td><td class="td-good">$40,000</td><td class="td-good">$55,000</td></tr>
+      </table>
+      <div class="alert alert-good" style="margin-top:1rem;">
+        <strong>The compounding effect:</strong> Each step funds the next. Photos pay for themselves in the first month. Peak season revenue funds the reno. Reno revenue funds the build. The build cash flows from year one.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('done');
+}
+
+function copyText(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
+function calcRevenue() {
+  const wkndRate = +document.getElementById('wkndRate').value;
+  const wkndOcc = +document.getElementById('wkndOcc').value / 100;
+  const moStays = +document.getElementById('moStays').value;
+  const moRate = +document.getElementById('moRate').value;
+
+  document.getElementById('wkndOut').textContent = '$' + wkndRate;
+  document.getElementById('wkndOccOut').textContent = Math.round(wkndOcc * 100) + '%';
+  document.getElementById('moOut').textContent = moStays;
+  document.getElementById('moRateOut').textContent = '$' + moRate.toLocaleString();
+
+  const weekendsBooked = Math.round(52 * wkndOcc);
+  const nightsBooked = weekendsBooked * 3;
+  const weekendRev = nightsBooked * wkndRate * 0.97;
+  const monthlyRev = moStays * moRate;
+  const cleaningRev = (weekendsBooked + moStays) * 200;
+  const total = weekendRev + monthlyRev + cleaningRev;
+  const net = total - 2813;
+
+  document.getElementById('rWeekend').textContent = '$' + Math.round(weekendRev).toLocaleString();
+  document.getElementById('rMonthly').textContent = '$' + Math.round(monthlyRev).toLocaleString();
+  document.getElementById('rCleaning').textContent = '$' + Math.round(cleaningRev).toLocaleString();
+  document.getElementById('rTotal').textContent = '$' + Math.round(total).toLocaleString();
+  document.getElementById('rNet').textContent = 'Net after ops costs: $' + Math.round(net).toLocaleString();
+}
+
+function calcROI() {
+  const build = +document.getElementById('buildCost').value || 0;
+  const mil = +document.getElementById('milIncome').value || 0;
+  const milMo = +document.getElementById('milMonths').value || 0;
+  const garage = +document.getElementById('garageIncome').value || 0;
+  const boost = +document.getElementById('houseBoost').value || 0;
+
+  const milAnnual = mil * milMo;
+  const garageAnnual = garage * 12;
+  const houseBoost = 22000 * (boost / 100);
+  const totalAnnual = milAnnual + garageAnnual + houseBoost;
+  const payback = totalAnnual > 0 ? (build / totalAnnual).toFixed(1) : '∞';
+  const tenYr = (totalAnnual * 10) - build;
+
+  document.getElementById('rMIL').textContent = '$' + Math.round(milAnnual).toLocaleString();
+  document.getElementById('rGarage').textContent = '$' + Math.round(garageAnnual).toLocaleString();
+  document.getElementById('rHouseBoost').textContent = '$' + Math.round(houseBoost).toLocaleString();
+  document.getElementById('rAnnual').textContent = '$' + Math.round(totalAnnual).toLocaleString();
+  document.getElementById('rCost').textContent = '-$' + Math.round(build).toLocaleString();
+  document.getElementById('rPayback').textContent = payback + ' yrs';
+  document.getElementById('r10yr').textContent = '$' + Math.round(tenYr).toLocaleString();
+}
+
+calcRevenue();
+calcROI();
+</script>
+</body>
+</html>
