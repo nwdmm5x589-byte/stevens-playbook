@@ -746,10 +746,10 @@
         <div class="pi"><div class="pv" id="piUsed">—</div><div class="pl">Total Footprint</div></div>
       </div>
       <div class="planner-dims" id="plannerDims">
-        <div class="pdim"><span class="pdl">Existing house</span><span class="pdv">~43' x 40' (1,700 sqft)</span></div>
+        <div class="pdim"><span class="pdl">Existing house</span><span class="pdv">47.8' x 37.9' (1,746 sqft)</span></div>
+        <div class="pdim"><span class="pdl">Existing slab (anchor)</span><span class="pdv">23' x 23' — build expands from here</span></div>
         <div class="pdim"><span class="pdl">MIL Suite</span><span class="pdv" id="pdMil">20' x 25' (500 sqft)</span></div>
         <div class="pdim"><span class="pdl">Garage (2-car)</span><span class="pdv" id="pdGar">24' x 24' (576 sqft)</span></div>
-        <div class="pdim"><span class="pdl">Breezeway</span><span class="pdv" id="pdBrz">auto-connects</span></div>
       </div>
       <div class="planner-help">
         Lot: Lots 2 &amp; 3, Block 1, Shelter Cove Sec 5 — 0.432 acres. Corner lot: Stevens Lane (north, 60' ROW) &amp; Charlotte Drive (east). 25' building setback from roads. 18' utility easement along south boundary. Survey by Give'M Heck, Inc., Job #979-001B.
@@ -1380,9 +1380,9 @@ calcROI();
 
   const buildings = {
     house:    { x: 36, y: 38, w: 48, h: 38, color: '#ddd8cc', stroke: '#0d2d4a', label: 'Existing House', sub: '1,746 sqft · 3bd/2ba', locked: true },
-    carport:  { x: 64, y: 100, w: 22, h: 18, color: '#e8e0d0', stroke: '#5d4037', label: 'Existing Carport', sub: 'Conc. block on slab', locked: true },
-    mil:      { x: 75, y: 40, w: 20, h: 25, color: '#c5cae9', stroke: '#283593', label: 'MIL Suite', sub: '500 sqft', locked: false },
-    garage:   { x: 75, y: 68, w: 24, h: 24, color: '#bbdefb', stroke: '#1565c0', label: 'Garage', sub: '576 sqft', locked: false },
+    carport:  { x: 62, y: 98, w: 23, h: 23, color: '#e8e0d0', stroke: '#5d4037', label: 'Existing Slab', sub: '23\'x23\' · build from here', locked: true },
+    mil:      { x: 62, y: 74, w: 20, h: 25, color: '#c5cae9', stroke: '#283593', label: 'MIL Suite', sub: '500 sqft', locked: false },
+    garage:   { x: 62, y: 98, w: 24, h: 24, color: '#bbdefb', stroke: '#1565c0', label: 'Garage', sub: '576 sqft · expands slab', locked: false },
   };
 
   let dragging = null, dragOffX = 0, dragOffY = 0;
@@ -1787,8 +1787,8 @@ calcROI();
   window.toggleDims = function(btn) { showDimLabels = !showDimLabels; btn.classList.toggle('active'); draw(); };
   window.toggleSnap = function(btn) { snapToGrid = !snapToGrid; btn.classList.toggle('active'); };
   window.resetBuildings = function() {
-    buildings.mil.x = 75; buildings.mil.y = 40;
-    buildings.garage.x = 75; buildings.garage.y = 68;
+    buildings.mil.x = 62; buildings.mil.y = 74;
+    buildings.garage.x = 62; buildings.garage.y = 98;
     draw();
   };
 
