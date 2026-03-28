@@ -1575,21 +1575,25 @@ calcROI();
     ctx.textAlign = 'center';
     ctx.fillText('fence', ftX(lotW / 2), ftY(lotH - 3));
 
-    // Driveway 1 — Lot 3 (left side), main driveway to house
+    // Driveway 1 — Lot 3, main driveway: enters Stevens Ln, runs to house
     ctx.fillStyle = '#d0cfc8';
+    // Approach from street to house
     ctx.fillRect(ftX(30), lot.y, 10 * S, 40 * S);
+    // Pad in front of house (parking apron)
+    ctx.fillRect(ftX(30), ftY(36), 16 * S, 5 * S);
     ctx.fillStyle = '#999';
     ctx.font = '8px DM Sans, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Drive 1', ftX(35), ftY(10));
+    ctx.fillText('Conc. Drive', ftX(35), ftY(10));
 
-    // Driveway 2 — Lot 2 (right side), second lot access / long driveway
+    // Driveway 2 — Lot 2, second long driveway to back slab/carport
     ctx.fillStyle = '#d0cfc8';
-    ctx.fillRect(ftX(78), lot.y, 10 * S, 55 * S);
+    ctx.fillRect(ftX(78), lot.y, 10 * S, 100 * S);
     ctx.fillStyle = '#999';
     ctx.font = '8px DM Sans, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Drive 2', ftX(83), ftY(10));
+    ctx.fillText('Conc. Drive 2', ftX(83), ftY(10));
+    ctx.fillText('(to back slab)', ftX(83), ftY(18));
 
     // Chain link fence + gate (front, per survey)
     ctx.setLineDash([2, 2]);
