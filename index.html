@@ -167,12 +167,33 @@
   .amenity .ico { font-size: 16px; }
   .amenity.highlight { background: var(--navy); color: white; }
 
+  /* Site Planner */
+  .planner-container { position: relative; background: #f8f8f5; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .planner-toolbar { display: flex; gap: 8px; padding: 12px 16px; background: white; border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+  .planner-toolbar .tbtn { font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: white; cursor: pointer; color: var(--text); transition: all 0.15s; }
+  .planner-toolbar .tbtn:hover { background: var(--cream); }
+  .planner-toolbar .tbtn.active { background: var(--navy); color: white; border-color: var(--navy); }
+  .planner-toolbar .sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+  .planner-canvas-wrap { position: relative; cursor: default; touch-action: none; overflow: auto; }
+  .planner-canvas-wrap canvas { display: block; margin: 0 auto; }
+  .planner-info { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 12px 16px; background: white; border-top: 1px solid var(--border); }
+  .planner-info .pi { text-align: center; }
+  .planner-info .pi .pv { font-size: 1.1rem; font-weight: 600; color: var(--navy); }
+  .planner-info .pi .pl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .planner-help { padding: 12px 16px; background: #f0f7ff; font-size: 13px; color: var(--text-muted); line-height: 1.5; border-top: 1px solid var(--border); }
+  .planner-dims { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px; background: white; border-top: 1px solid var(--border); }
+  .pdim { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 8px; background: var(--cream); border-radius: 4px; }
+  .pdim .pdl { color: var(--text-muted); }
+  .pdim .pdv { font-weight: 600; color: var(--navy); }
+
   @media (max-width: 600px) {
     .header h1 { font-size: 1.8rem; }
     .metrics { grid-template-columns: 1fr 1fr; }
     .card-grid { grid-template-columns: 1fr; }
     .roi-grid { grid-template-columns: 1fr; }
     .amenity-grid { grid-template-columns: 1fr 1fr; }
+    .planner-info { grid-template-columns: 1fr; }
+    .planner-dims { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -182,12 +203,12 @@
   <div class="header-inner">
     <div class="header-tag">TGM Group LLC — STR Property Playbook</div>
     <h1>382 Stevens Ln<br><em>Livingston, TX 77351</em></h1>
-    <div class="header-sub">3 bed · 2 bath · ~1,700 sqft · dog-friendly · boat ramp · fenced yard</div>
+    <div class="header-sub">3 bed · 2 bath · 1,746 sqft · dog-friendly · community boat ramp · fenced yard</div>
     <div class="header-stats">
-      <div class="hstat"><div class="val">$19,899</div><div class="lbl">2025 Revenue</div></div>
-      <div class="hstat"><div class="val">$29K+</div><div class="lbl">Market Avg</div></div>
-      <div class="hstat"><div class="val">4.8★</div><div class="lbl">Rating</div></div>
-      <div class="hstat"><div class="val">~$9K</div><div class="lbl">Gap to Close</div></div>
+      <div class="hstat"><div class="val">$19,299</div><div class="lbl">2025 Net Revenue</div></div>
+      <div class="hstat"><div class="val">202</div><div class="lbl">Nights Booked</div></div>
+      <div class="hstat"><div class="val">4.82★</div><div class="lbl">Rating (11 reviews)</div></div>
+      <div class="hstat"><div class="val">16.8</div><div class="lbl">Avg Stay (nights)</div></div>
     </div>
   </div>
 </div>
@@ -198,6 +219,7 @@
     <button class="nav-btn" onclick="showSection('listing')">Listing Fixes</button>
     <button class="nav-btn" onclick="showSection('pricing')">Pricing</button>
     <button class="nav-btn" onclick="showSection('floorplan')">Floor Plan</button>
+    <button class="nav-btn" onclick="showSection('planner')">Site Planner</button>
     <button class="nav-btn" onclick="showSection('build')">Build Plan</button>
     <button class="nav-btn" onclick="showSection('hoa')">HOA & Permits</button>
     <button class="nav-btn" onclick="showSection('ops')">Operations</button>
@@ -218,56 +240,97 @@
     </div>
 
     <div class="alert alert-warn">
-      <strong>The real diagnosis:</strong> Your property isn't underperforming because of your rate. It's underperforming because of bad photos, an unoptimized listing, and long-term stays eating your peak weekends. Fix those three things before spending a dollar on construction.
+      <strong>The real diagnosis:</strong> May–Aug earned only $3,469 combined — your 4 peak months made less than January alone ($2,572). The 16.8-night average stay means you're almost entirely long-term bookings. Long-term fills dead months but crushes peak season revenue. You need short-stay weekend bookings in May–Oct and long-term only Nov–Feb.
     </div>
 
     <div class="metrics">
-      <div class="metric"><div class="val">~9</div><div class="lbl">Short stays in 2025</div></div>
-      <div class="metric amber"><div class="val">6 mo</div><div class="lbl">Long-term blocks</div></div>
-      <div class="metric green"><div class="val">$2,813</div><div class="lbl">True annual ops cost</div></div>
-      <div class="metric"><div class="val">~18</div><div class="lbl">Peak nights booked</div></div>
+      <div class="metric"><div class="val">~12</div><div class="lbl">Total Bookings</div></div>
+      <div class="metric amber"><div class="val">$3,469</div><div class="lbl">May–Aug Revenue</div></div>
+      <div class="metric green"><div class="val">$19,299</div><div class="lbl">Net After Fees</div></div>
+      <div class="metric"><div class="val">55%</div><div class="lbl">Occupancy Rate</div></div>
     </div>
 
     <div class="card">
-      <div class="card-title">2025 Revenue Breakdown — What Actually Happened</div>
+      <div class="card-title">2025 Actual Monthly Revenue (Airbnb Earnings Report)</div>
       <table>
-        <tr><th>Period</th><th>Type</th><th>Nights</th><th>Revenue</th><th>Assessment</th></tr>
-        <tr><td>May 15–Jul 6</td><td>6 short stays</td><td>~18</td><td>~$5,760</td><td class="td-good">Good</td></tr>
-        <tr><td>Jul 7–24</td><td>Gap (vacant)</td><td>17</td><td>$0</td><td class="td-warn">Lost ~$2,700</td></tr>
-        <tr><td>Jul 25–Aug 2</td><td>Personal use</td><td>9</td><td>$0</td><td class="td-warn">Personal choice</td></tr>
-        <tr><td>Aug end</td><td>1 weekend stay</td><td>2</td><td>~$520</td><td class="td-good">OK</td></tr>
-        <tr class="highlight"><td>Sep 1–Nov 1</td><td>Long-term stay</td><td>61</td><td>~$4,900</td><td class="td-bad">Ate fall season</td></tr>
-        <tr><td>Nov–Dec</td><td>Mixed stays</td><td>~20</td><td>~$7,200</td><td class="td-good">Decent</td></tr>
-        <tr><td>Jan–Mar 2025</td><td>Long-term</td><td>~90</td><td>~$7,350</td><td class="td-warn">Filled dead months</td></tr>
+        <tr><th>Month</th><th>Gross</th><th>Net (after fees)</th><th>Assessment</th></tr>
+        <tr><td>January</td><td>$2,651.83</td><td>$2,571.83</td><td class="td-good">Strong</td></tr>
+        <tr><td>February</td><td>$2,032.46</td><td>$1,971.04</td><td class="td-good">Solid</td></tr>
+        <tr><td>March</td><td>$2,193.71</td><td>$2,127.90</td><td class="td-good">Solid</td></tr>
+        <tr><td>April</td><td>$2,391.99</td><td>$2,320.21</td><td class="td-good">Solid</td></tr>
+        <tr class="highlight"><td>May</td><td>$945.69</td><td>$917.04</td><td class="td-bad">Peak season — underperformed</td></tr>
+        <tr class="highlight"><td>June</td><td>$1,360.00</td><td>$1,319.20</td><td class="td-bad">Peak season — underperformed</td></tr>
+        <tr class="highlight"><td>July</td><td>$630.69</td><td>$611.49</td><td class="td-bad">Worst month — peak wasted</td></tr>
+        <tr class="highlight"><td>August</td><td>$640.54</td><td>$621.04</td><td class="td-bad">Worst month — peak wasted</td></tr>
+        <tr><td>September</td><td>$2,393.43</td><td>$2,321.18</td><td class="td-good">Recovered</td></tr>
+        <tr><td>October</td><td>$2,403.15</td><td>$2,330.61</td><td class="td-good">Recovered</td></tr>
+        <tr><td>November</td><td>$2,255.74</td><td>$2,187.62</td><td class="td-good">Solid</td></tr>
+        <tr><td>December</td><td>$0.00</td><td>$0.00</td><td class="td-bad">Vacant</td></tr>
+        <tr style="background:#f0f7ff; font-weight:600;"><td>Total</td><td>$19,899.23</td><td>$19,299.16</td><td>Fees: $600.07 · Tax: $240.30</td></tr>
       </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Annual Operating Costs — The Real Picture</div>
+      <table>
+        <tr><th>Expense</th><th>Amount</th><th>Frequency</th><th>Annual Total</th></tr>
+        <tr><td>Mortgage payment (total)</td><td>$1,700</td><td>Monthly</td><td>$20,400</td></tr>
+        <tr><td style="padding-left:2rem; color:var(--text-muted);">— Principal (builds equity)</td><td style="color:var(--text-muted);">~$500</td><td style="color:var(--text-muted);">Monthly</td><td style="color:var(--green);">~$6,000</td></tr>
+        <tr><td style="padding-left:2rem; color:var(--text-muted);">— Interest</td><td style="color:var(--text-muted);">~$500</td><td style="color:var(--text-muted);">Monthly</td><td style="color:var(--text-muted);">~$6,000</td></tr>
+        <tr><td style="padding-left:2rem; color:var(--text-muted);">— Taxes + insurance</td><td style="color:var(--text-muted);">~$700</td><td style="color:var(--text-muted);">Monthly</td><td style="color:var(--text-muted);">~$8,400</td></tr>
+        <tr><td>Lawn care</td><td>$140</td><td>Every 2 weeks</td><td class="td-warn">$3,640</td></tr>
+        <tr><td>Cleaning (your cost at $120/stay)</td><td>$120</td><td>~12 bookings</td><td>$1,440</td></tr>
+        <tr><td>HOA (Shelter Cove POA)</td><td>$100</td><td>Annual</td><td>$100</td></tr>
+        <tr><td>Airbnb service fees</td><td>—</td><td>Per booking</td><td>$600</td></tr>
+        <tr style="background:#fff3e0; font-weight:600;"><td>True operating cost (excl. principal)</td><td></td><td></td><td class="td-warn">$20,180+</td></tr>
+        <tr style="background:#f0f7ff; font-weight:600;"><td>Net revenue</td><td></td><td></td><td>$19,299</td></tr>
+        <tr style="background:#fce4ec; font-weight:700;"><td>Cash flow gap (before utilities)</td><td></td><td></td><td class="td-bad">-$881</td></tr>
+        <tr style="background:#e8f5e9;"><td>Principal paydown (equity built)</td><td></td><td></td><td class="td-good">+$6,000</td></tr>
+      </table>
+      <div class="alert alert-info" style="margin-top:1rem;">
+        <strong>Better than it looks:</strong> ~$500/mo goes to principal (equity), so you're building ~$6K/year in wealth. True cash-flow gap is only ~$881/year before utilities — not $7K. But you still need more revenue to be truly cash-flow positive. Fixing May–Aug is the key.
+      </div>
     </div>
 
     <div class="card-grid">
       <div class="card">
-        <div class="card-title">Your Real Advantages</div>
+        <div class="card-title">Property Details</div>
         <div class="amenity-grid">
-          <div class="amenity highlight"><span class="ico">🐕</span> Dog-friendly</div>
-          <div class="amenity highlight"><span class="ico">🏡</span> Fenced yard</div>
-          <div class="amenity highlight"><span class="ico">⛵</span> Boat ramp</div>
-          <div class="amenity"><span class="ico">👶</span> Crib available</div>
-          <div class="amenity"><span class="ico">🛋️</span> Sleeps 10</div>
-          <div class="amenity"><span class="ico">🏠</span> Modern interior</div>
-          <div class="amenity"><span class="ico">💰</span> Competitive rate</div>
-          <div class="amenity"><span class="ico">⭐</span> 4.8 rating</div>
-          <div class="amenity"><span class="ico">🌳</span> Large yard</div>
+          <div class="amenity"><span class="ico">📍</span> Shelter Cove Sec 5</div>
+          <div class="amenity"><span class="ico">📐</span> 0.43 acres (Lots 2 & 3)</div>
+          <div class="amenity"><span class="ico">🏗️</span> Built 1998 · Brick</div>
+          <div class="amenity"><span class="ico">💵</span> Appraised $192,887</div>
+          <div class="amenity"><span class="ico">❄️</span> New AC (Jun 2024)</div>
+          <div class="amenity"><span class="ico">🔨</span> Remodeled: bedrooms, paint, trim, doors</div>
+          <div class="amenity"><span class="ico">🚧</span> Needs: kitchen + bathrooms</div>
+          <div class="amenity"><span class="ico">🏚️</span> Old garage — tear down & rebuild</div>
+          <div class="amenity"><span class="ico">📜</span> STRs allowed in Shelter Cove</div>
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Your Gaps vs Competition</div>
-        <div class="step"><div class="step-content"><div class="step-title">Photos are old and weak</div><div class="step-desc">Biggest single fix. Professional photos = immediate ranking boost and higher click-through rate.</div></div></div>
-        <div class="step"><div class="step-content"><div class="step-title">Not on the water</div><div class="step-desc">Real ceiling on rate vs lakefront. Offset with yard, dog-friendly, and value positioning.</div></div></div>
-        <div class="step"><div class="step-content"><div class="step-title">No pool</div><div class="step-desc">Nice to have but not required. Liability + cleaning cost likely outweigh revenue gain at this stage.</div></div></div>
-        <div class="step"><div class="step-content"><div class="step-title">Kitchen + bath dated</div><div class="step-desc">Worth doing but after photos. Don't delay photos waiting for the reno.</div></div></div>
+        <div class="card-title">Your Advantages</div>
+        <div class="amenity-grid">
+          <div class="amenity highlight"><span class="ico">🐕</span> Dog-friendly</div>
+          <div class="amenity highlight"><span class="ico">🏡</span> Fenced yard</div>
+          <div class="amenity highlight"><span class="ico">⛵</span> Community boat ramp</div>
+          <div class="amenity"><span class="ico">👶</span> Crib available</div>
+          <div class="amenity"><span class="ico">🛋️</span> Sleeps 10</div>
+          <div class="amenity"><span class="ico">⭐</span> 4.82 rating (11 reviews)</div>
+        </div>
       </div>
     </div>
 
+    <div class="card">
+      <div class="card-title">Your Gaps vs Competition</div>
+      <div class="step"><div class="step-content"><div class="step-title">Photos are old and weak</div><div class="step-desc">Biggest single fix. Professional photos = immediate ranking boost and higher click-through rate.</div></div></div>
+      <div class="step"><div class="step-content"><div class="step-title">Kitchen + bathrooms not yet renovated</div><div class="step-desc">Bedrooms, paint, trim, doors are done. Kitchen and baths are next — will photograph better and justify higher rate.</div></div></div>
+      <div class="step"><div class="step-content"><div class="step-title">Not on the water</div><div class="step-desc">Real ceiling on rate vs lakefront. Offset with yard, dog-friendly, and value positioning. Community boat ramp nearby.</div></div></div>
+      <div class="step"><div class="step-content"><div class="step-title">Peak season (May–Aug) massively underperforming</div><div class="step-desc">4 peak months made $3,469 — less than January alone. Need to shift from long-term to weekend strategy for summer.</div></div></div>
+      <div class="step"><div class="step-content"><div class="step-title">Old garage needs to be torn down</div><div class="step-desc">Existing garage/workshop is dilapidated. Teardown + rebuild as garage + MIL suite is part of the build plan.</div></div></div>
+    </div>
+
     <div class="alert alert-good">
-      <strong>What's working:</strong> Your monthly strategy for Nov–Feb dead months is correct. Long-term in dead season = smart. Long-term in Sep–Oct = costly. The cleaner reliability is good but standards need raising. Your 4.8 rating is your most valuable asset — protect it.
+      <strong>What's working:</strong> Jan–Apr and Sep–Nov are consistently $2,000+/mo — long-term strategy fills months reliably. 4.82 rating across 11 reviews is solid. Cleaning fee profit ($80/stay). <strong>What's broken:</strong> May–Aug totaled $3,469 — less than January alone. December was $0. Property is cash-flow negative ~$7K/year before utilities. Fixing summer = fixing the entire business.
     </div>
   </div>
 
@@ -648,6 +711,82 @@
     </div>
   </div>
 
+  <!-- SITE PLANNER -->
+  <div class="section" id="planner">
+    <div class="phase-header">
+      <div class="phase-num">P</div>
+      <div>
+        <div class="phase-title">Interactive Site Planner</div>
+        <div class="phase-sub">Drag buildings around your actual lot — based on survey by Jeffrey N. Heck</div>
+      </div>
+    </div>
+
+    <div class="alert alert-info">
+      <strong>How to use:</strong> Drag the blue buildings (MIL Suite, Garage) to position them on the lot. The existing house is locked in place. Setback lines and easements are shown — keep new construction inside the buildable area. Use the toolbar to toggle grid, setbacks, and dimensions.
+    </div>
+
+    <div class="planner-container">
+      <div class="planner-toolbar">
+        <button class="tbtn active" onclick="toggleGrid(this)">Grid</button>
+        <button class="tbtn active" onclick="toggleSetbacks(this)">Setbacks</button>
+        <button class="tbtn active" onclick="toggleEasements(this)">Easements</button>
+        <button class="tbtn active" onclick="toggleDims(this)">Dimensions</button>
+        <div class="sep"></div>
+        <button class="tbtn" onclick="resetBuildings()">Reset Positions</button>
+        <button class="tbtn" onclick="toggleSnap(this)">Snap to Grid</button>
+        <div class="sep"></div>
+        <span style="font-size:11px; color:var(--text-muted);">Scale: 1 grid square = 10ft</span>
+      </div>
+      <div class="planner-canvas-wrap">
+        <canvas id="plannerCanvas" width="780" height="700"></canvas>
+      </div>
+      <div class="planner-info">
+        <div class="pi"><div class="pv" id="piLot">18,808 sqft</div><div class="pl">Total Lot</div></div>
+        <div class="pi"><div class="pv" id="piBuildable">—</div><div class="pl">Buildable Area</div></div>
+        <div class="pi"><div class="pv" id="piUsed">—</div><div class="pl">Total Footprint</div></div>
+      </div>
+      <div class="planner-dims" id="plannerDims">
+        <div class="pdim"><span class="pdl">Existing house</span><span class="pdv">~43' x 40' (1,700 sqft)</span></div>
+        <div class="pdim"><span class="pdl">MIL Suite</span><span class="pdv" id="pdMil">20' x 25' (500 sqft)</span></div>
+        <div class="pdim"><span class="pdl">Garage (2-car)</span><span class="pdv" id="pdGar">24' x 24' (576 sqft)</span></div>
+        <div class="pdim"><span class="pdl">Breezeway</span><span class="pdv" id="pdBrz">auto-connects</span></div>
+      </div>
+      <div class="planner-help">
+        Lot: Lots 2 &amp; 3, Block 1, Shelter Cove Sec 5 — 0.432 acres. Corner lot: Stevens Lane (north, 60' ROW) &amp; Charlotte Drive (east). 25' building setback from roads. 18' utility easement along south boundary. Survey by Give'M Heck, Inc., Job #979-001B.
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <div class="card-title">Building Size Controls</div>
+      <div class="card-grid">
+        <div>
+          <div class="input-group">
+            <label>MIL Suite Width (ft)</label>
+            <input type="range" min="16" max="30" step="1" value="20" id="milW" oninput="updateBuildingSize()">
+            <span id="milWOut" style="font-size:13px;">20'</span>
+          </div>
+          <div class="input-group">
+            <label>MIL Suite Depth (ft)</label>
+            <input type="range" min="16" max="35" step="1" value="25" id="milD" oninput="updateBuildingSize()">
+            <span id="milDOut" style="font-size:13px;">25'</span>
+          </div>
+        </div>
+        <div>
+          <div class="input-group">
+            <label>Garage Width (ft)</label>
+            <input type="range" min="20" max="30" step="1" value="24" id="garW" oninput="updateBuildingSize()">
+            <span id="garWOut" style="font-size:13px;">24'</span>
+          </div>
+          <div class="input-group">
+            <label>Garage Depth (ft)</label>
+            <input type="range" min="20" max="30" step="1" value="24" id="garD" oninput="updateBuildingSize()">
+            <span id="garDOut" style="font-size:13px;">24'</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- BUILD PLAN -->
   <div class="section" id="build">
     <div class="phase-header">
@@ -750,84 +889,223 @@
       </div>
     </div>
 
-    <div class="alert alert-warn">
-      <strong>Do these before any contractor conversation.</strong> Deed restrictions in Polk County lake communities can prohibit STR use, auxiliary structures, or commercial activity. Know your constraints first.
+    <div class="card">
+      <div class="card-title">Shelter Cove POA — Basic Info</div>
+      <table>
+        <tr><th>Detail</th><th>Info</th></tr>
+        <tr><td>HOA name</td><td>Shelter Cove Property Owners Association, Inc.</td></tr>
+        <tr><td>Annual dues</td><td>$100/lot (combined lot = 1 fee). Due July 1. Delinquent after Sep 1.</td></tr>
+        <tr><td>Your property</td><td>Section 5, Block 1, Lots 2 & 3 (combined)</td></tr>
+        <tr><td>Contact</td><td>Kay Hardy · sheltercovepoa@gmail.com · (936) 329-3660</td></tr>
+        <tr><td>Mailing</td><td>PO Box 321, Livingston TX 77351</td></tr>
+        <tr><td>Building requests</td><td>ARC@sheltercovepoa.com</td></tr>
+        <tr><td>President</td><td>Jerome S. Healy Jr.</td></tr>
+        <tr><td>Annual meeting</td><td>2nd Saturday in June, 1:00 PM</td></tr>
+        <tr><td>Deed restrictions</td><td>2025 Amended CC&Rs (adopted June 7, 2025; filed Sep 4, 2025). Vote: 75 FOR, 41 AGAINST.</td></tr>
+        <tr><td>Restrictions expire</td><td>December 31, 2028, then auto-renew in 10-year periods</td></tr>
+        <tr><td>Boat ramps</td><td>2 community ramps. Require windshield sticker (upper left). Email sheltercovepoa@gmail.com after paying dues.</td></tr>
+        <tr><td>Violation fines</td><td>$100/month after 30-day notice</td></tr>
+        <tr><td>Late fee on dues</td><td>10% annual interest from Sep 1 delinquency date</td></tr>
+      </table>
+    </div>
+
+    <div class="alert alert-info">
+      <strong>MIL Suite approach:</strong> C.5(a) explicitly references "servants quarters" as a recognized accessory living space — the CC&Rs envision this type of addition. The MIL suite is an expansion of the main house (connected by breezeway), adding bedrooms and increasing sleep capacity from 10 to 12–14. It is part of one single-family property, not a separate dwelling. Detached garage is an allowed outbuilding under C.2(a). Still submit Building Request Form to ARC@sheltercovepoa.com for ACC approval before starting.
     </div>
 
     <div class="card">
-      <div class="card-title">HOA / Deed Restriction Research — Do This First</div>
+      <div class="card-title">Deed Restriction Rules That Directly Affect You (2025 CC&Rs)</div>
+
+      <p style="font-weight:600; font-size:13px; margin:1rem 0 0.5rem; color:var(--red);">Build Plan Restrictions</p>
       <div class="hoa-item">
         <div class="hoa-status unknown"></div>
         <div class="hoa-text">
-          <strong>Pull your deed from Polk County Appraisal District</strong>
-          <span>Go to polkcad.org → search 382 Stevens Ln → download deed. Look for restrictive covenants, especially re: short-term rentals and accessory dwelling units (ADUs).</span>
+          <strong>C.2(a) — Only ONE single-family dwelling per lot</strong>
+          <span>Outbuildings to serve the residents may be erected, but a MIL suite as a separate rental unit likely counts as a second dwelling. Must clarify with ACC.</span>
         </div>
       </div>
       <div class="hoa-item">
         <div class="hoa-status unknown"></div>
         <div class="hoa-text">
-          <strong>Confirm whether Memorial Point UD has STR restrictions</strong>
-          <span>Your water provider is Memorial Point UD (it's on your bills). That's a municipal utility district — they may have deed restrictions attached to the subdivision. Call them directly.</span>
+          <strong>C.16 — No outbuilding shall be used as a dwelling</strong>
+          <span>"No shack or any outbuilding (other than a private boathouse, garage, or storage building) shall be erected... and no boathouse, garage or storage building shall at any time be used as a dwelling, temporarily or permanently." A garage with a living space above may violate this.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status check"></div>
+        <div class="hoa-text">
+          <strong>C.5(a) — Minimum 1,200 sqft for new permanent structures</strong>
+          <span>Living area (excluding porches, garages, carports, servants quarters) must be at least 1,200 sqft for new structures. Does not apply to your existing 1,746 sqft house. Would apply to a new standalone MIL suite.</span>
+        </div>
+      </div>
+
+      <p style="font-weight:600; font-size:13px; margin:1.5rem 0 0.5rem;">Setbacks & Building Limits</p>
+      <div class="hoa-item">
+        <div class="hoa-status check"></div>
+        <div class="hoa-text">
+          <strong>C.4 — Setbacks: 20ft front, 10ft rear, 5ft sides</strong>
+          <span>Main residence: 20ft from front property line, 10ft from rear. Detached garage/carport/other structure: 5ft from interior side lot lines. Max 2 stories, max 35ft floor-to-roof-peak.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status check"></div>
+        <div class="hoa-text">
+          <strong>C.5(d) — No sheet metal roof or siding without ACC approval</strong>
+          <span>No tar type roof/siding either. All exterior must be painted or stained. Must be underpinned/underskirted (no visible piers).</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status check"></div>
+        <div class="hoa-text">
+          <strong>C.5(c) — All construction must use new materials</strong>
+          <span>No used buildings or structures moved onto lot without ACC written permission. Stone, brick OK. Antique decorative with ACC approval.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status check"></div>
+        <div class="hoa-text">
+          <strong>C.3(c) — Exterior must be complete within 6 months of starting</strong>
+          <span>If not commenced within 1 year of ACC approval, approval is void. No occupancy until connected to public sewer and water.</span>
+        </div>
+      </div>
+
+      <p style="font-weight:600; font-size:13px; margin:1.5rem 0 0.5rem;">STR & Rental Rules</p>
+      <div class="hoa-item">
+        <div class="hoa-status check"></div>
+        <div class="hoa-text">
+          <strong>C.2(b) — Rentals/leases are allowed but with conditions</strong>
+          <span>Any rental or lease must provide in writing that the renter has received a copy of the Deed Restrictions and agrees to be bound by them. You must advise renters of all rules. Owner is responsible for renter violations.</span>
         </div>
       </div>
       <div class="hoa-item">
         <div class="hoa-status unknown"></div>
         <div class="hoa-text">
-          <strong>Check for HOA — if one exists, get their CC&Rs</strong>
-          <span>Lake communities in Livingston often have informal HOAs. Even if you don't pay dues, deed restrictions may bind you. Ask neighbors or check with title company.</span>
+          <strong>C.2(b) — "Boarding houses, hotels" are prohibited</strong>
+          <span>The restrictions exclude "boarding houses, hotels, and all other commercial uses." STRs are a gray area — rentals are explicitly allowed, but the "hotel" language could be used against you. Shelter Cove is marketed as STR-friendly, so this likely isn't enforced, but know the risk.</span>
         </div>
       </div>
       <div class="hoa-item">
         <div class="hoa-status unknown"></div>
         <div class="hoa-text">
-          <strong>Verify STR is currently legal at your address</strong>
-          <span>Livingston city limits may have different rules than unincorporated Polk County. Confirm you're operating legally — most lake properties outside city limits are fine.</span>
+          <strong>C.2(e) — Max 2 unrelated persons per household</strong>
+          <span>"Single family" is defined as 1 person, family members, or no more than 2 unrelated persons. Airbnb groups of 6-10 unrelated guests technically violate this. Unlikely to be enforced against short-term guests, but it's in the CC&Rs.</span>
         </div>
       </div>
+
+      <p style="font-weight:600; font-size:13px; margin:1.5rem 0 0.5rem;">Old Garage — Urgent</p>
       <div class="hoa-item">
         <div class="hoa-status unknown"></div>
         <div class="hoa-text">
-          <strong>Check if ADU / guest house is permitted on your lot</strong>
-          <span>Polk County has setback requirements for accessory structures. Typically 5–10ft from property line minimum. Confirm your lot size allows the proposed footprint.</span>
+          <strong>C.12 — Dilapidated structures must be fixed or removed in 60 days</strong>
+          <span>"If vacancies occur and said structures fall into disrepair, they will be deemed 'attractive nuisances', and the Owner will be required to dismantle and remove said structures." If the POA notices your old garage, they can force removal at your cost and lien your property.</span>
+        </div>
+      </div>
+
+      <p style="font-weight:600; font-size:13px; margin:1.5rem 0 0.5rem;">Other Rules to Know</p>
+      <div class="hoa-item">
+        <div class="hoa-status check"></div>
+        <div class="hoa-text">
+          <strong>C.11 — Pets: max 3 of each type (dogs, cats)</strong>
+          <span>Dogs and cats OK. No livestock. Must comply with Polk County Animal Control. Guest dogs count — make sure your listing cap aligns.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status check"></div>
+        <div class="hoa-text">
+          <strong>C.5(h) — Fences: wood or steel only facing streets</strong>
+          <span>Allowed to side and back lot lines, and to no less than 15ft from front lot lines. No barbwire facing streets. No storing items against fences.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status check"></div>
+        <div class="hoa-text">
+          <strong>C.10(g) — Grass max 12 inches, maintain culverts/ditches</strong>
+          <span>Owner responsible for mowing easements, vegetation crossing property lines, keeping culverts and drainage ditches clear.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status check"></div>
+        <div class="hoa-text">
+          <strong>C.8 — No vehicles/boats parked on right-of-way or common areas</strong>
+          <span>No vehicles blocking public roads. Must be rid of non-running vehicles, unused appliances, scrap lumber, tires, trash. "Restored" vehicles must be covered and hidden from public view.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status check"></div>
+        <div class="hoa-text">
+          <strong>C.6 — You can consolidate your 2 lots into 1 building site</strong>
+          <span>As owner of Lots 2 & 3, you can combine them. Side setbacks measured from outer property lines. Must maintain minimum frontage.</span>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Permit Requirements — Polk County / City of Livingston</div>
+      <div class="card-title">ACC Building Request — How to Submit</div>
       <div class="hoa-item">
         <div class="hoa-status unknown"></div>
         <div class="hoa-text">
-          <strong>Building permit — required for any new structure over 200 sqft</strong>
-          <span>Contact Polk County Permits office. For unincorporated county land: (936) 327-6813. Expect 2–6 week approval timeline.</span>
+          <strong>Email completed form + plans to ARC@sheltercovepoa.com</strong>
+          <span>Form requires: your name/address, Section 5 / Lots 2 & 3, building type, sqft, foundation type (pier & beam or concrete), exterior wall material, roof type/material, estimated start + completion dates.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Must include construction plans, drawings, AND plot plan showing easements</strong>
+          <span>ACC reviews for harmony with existing structures, topography, setbacks. Approval must be in writing. Must begin within 1 year or approval expires.</span>
+        </div>
+      </div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Keep approved form posted or accessible during construction</strong>
+          <span>A copy of the approved building request must be posted or easily available (within 5 minutes) while building is taking place.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Memorial Point Utility District (MPUD)</div>
+      <table>
+        <tr><th>Detail</th><th>Info</th></tr>
+        <tr><td>Address</td><td>251 Stevens Lane, Livingston TX 77351</td></tr>
+        <tr><td>Phone</td><td>(936) 653-5003</td></tr>
+        <tr><td>Water billing</td><td>Through Inframark (PayMyInframarkBill.com)</td></tr>
+        <tr><td>Water leaks</td><td>(936) 566-4273</td></tr>
+        <tr><td>Tax</td><td>Levies ad valorem property tax (on top of Polk County + Livingston ISD)</td></tr>
+        <tr><td>Board meetings</td><td>2nd Monday each month, 9:00 AM at 251 Stevens Ln</td></tr>
+        <tr><td>Established</td><td>May 26, 1971 · 315.995 acres · 5-member elected board</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Permit Requirements — Polk County (Unincorporated)</div>
+      <div class="hoa-item">
+        <div class="hoa-status unknown"></div>
+        <div class="hoa-text">
+          <strong>Residential Development Permit — $150 (valid 2 years)</strong>
+          <span>Required before building or adding any structure. Contact: Polk County Permits, 602 E Church St Suite 141, Livingston TX 77351 · (936) 327-6820 ext 1 · permits@co.polk.tx.us</span>
         </div>
       </div>
       <div class="hoa-item">
         <div class="hoa-status unknown"></div>
         <div class="hoa-text">
           <strong>Electrical permit — required for new panel / hookup</strong>
-          <span>Must be pulled by licensed electrician. Your TGM connection with Trinity (TDLR apprentice) won't qualify for this — need a licensed electrician to pull the permit.</span>
+          <span>Must be pulled by licensed electrician. Separate from the development permit.</span>
         </div>
       </div>
       <div class="hoa-item">
         <div class="hoa-status unknown"></div>
         <div class="hoa-text">
-          <strong>Plumbing permit — required for MIL suite bathroom/kitchen</strong>
-          <span>New septic capacity may be required if your current system is sized only for the main house. Get a septic inspection before finalizing plans.</span>
+          <strong>OSSF (Septic) Permit — $300 for additional dwelling</strong>
+          <span>Required for each additional residential structure. Minimum land: 1/2 acre with central water (you have 0.43 acres — tight, verify with county). May require septic expansion or second system.</span>
         </div>
       </div>
       <div class="hoa-item">
         <div class="hoa-status unknown"></div>
         <div class="hoa-text">
           <strong>Flood zone check — FEMA FIRM map</strong>
-          <span>Lake Livingston area has significant flood zone areas. Confirm your parcel's flood designation before building — it affects insurance, financing, and what you can build.</span>
-        </div>
-      </div>
-      <div class="hoa-item">
-        <div class="hoa-status unknown"></div>
-        <div class="hoa-text">
-          <strong>Septic capacity — confirm existing system supports ADU</strong>
-          <span>Adding a MIL suite adds load to your septic. Most systems in the area are sized for the main house only. May require expansion or second system.</span>
+          <span>Check at msc.fema.gov or call Polk County Floodplain Administrator: (936) 327-6826. If in floodplain, you need a Base Flood Elevation certificate before permits.</span>
         </div>
       </div>
     </div>
@@ -1015,6 +1293,8 @@ function showSection(id) {
   document.getElementById(id).classList.add('active');
   event.target.classList.add('active');
   window.scrollTo({top: 0, behavior: 'smooth'});
+  // Redraw planner canvas when tab becomes visible
+  if (id === 'planner' && window._plannerDraw) window._plannerDraw();
 }
 
 function toggleCheck(el) {
@@ -1081,6 +1361,420 @@ function calcROI() {
 
 calcRevenue();
 calcROI();
+
+// ── SITE PLANNER ──────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('plannerCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // Scale: 4px = 1ft. Lot ~120' wide x 157' deep
+  const S = 4;
+  const lotW = 120, lotH = 157;
+  const padL = 50, padT = 60;
+
+  const lot = { x: padL, y: padT, w: lotW * S, h: lotH * S };
+
+  let showGrid = true, showSetbacks = true, showEasements = true, showDimLabels = true, snapToGrid = false;
+
+  const buildings = {
+    house:  { x: 25, y: 30, w: 43, h: 40, color: '#ddd8cc', stroke: '#0d2d4a', label: 'Existing House', sub: '1,700 sqft · 3bd/2ba', locked: true },
+    mil:    { x: 73, y: 35, w: 20, h: 25, color: '#c5cae9', stroke: '#283593', label: 'MIL Suite', sub: '500 sqft', locked: false },
+    garage: { x: 73, y: 65, w: 24, h: 24, color: '#bbdefb', stroke: '#1565c0', label: 'Garage', sub: '576 sqft', locked: false },
+  };
+
+  let dragging = null, dragOffX = 0, dragOffY = 0;
+
+  function ftX(ft) { return lot.x + ft * S; }
+  function ftY(ft) { return lot.y + ft * S; }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#f4f4ef';
+    ctx.fillRect(0, 0, W, H);
+
+    // Stevens Lane (top — front of property)
+    ctx.fillStyle = '#d5d5cd';
+    ctx.fillRect(lot.x - 20, lot.y - 45, lot.w + 40, 40);
+    ctx.fillStyle = '#888';
+    ctx.font = '12px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Stevens Lane (60\' ROW)', lot.x + lot.w / 2, lot.y - 28);
+    ctx.fillStyle = '#aaa';
+    ctx.font = '10px DM Sans, sans-serif';
+    ctx.fillText('\u2190 to Lake Livingston', lot.x + 70, lot.y - 14);
+
+    // Neighbor labels (sides)
+    ctx.fillStyle = '#f0ece0';
+    ctx.fillRect(lot.x - 40, lot.y, 35, lot.h);
+    ctx.fillRect(lot.x + lot.w + 5, lot.y, 35, lot.h);
+    ctx.save();
+    ctx.fillStyle = '#999';
+    ctx.font = '11px DM Sans, sans-serif';
+    ctx.translate(lot.x - 22, lot.y + lot.h / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillText('Neighbor (Lot 4)', 0, 0);
+    ctx.restore();
+    ctx.save();
+    ctx.fillStyle = '#999';
+    ctx.font = '11px DM Sans, sans-serif';
+    ctx.translate(lot.x + lot.w + 24, lot.y + lot.h / 2);
+    ctx.rotate(Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillText('Neighbor (Lot 1)', 0, 0);
+    ctx.restore();
+
+    // Back label
+    ctx.fillStyle = '#f0ece0';
+    ctx.fillRect(lot.x - 20, lot.y + lot.h + 5, lot.w + 40, 30);
+    ctx.fillStyle = '#999';
+    ctx.font = '11px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Rear (back of lot)', lot.x + lot.w / 2, lot.y + lot.h + 24);
+
+    // Lot fill
+    ctx.fillStyle = '#e8f0e0';
+    ctx.fillRect(lot.x, lot.y, lot.w, lot.h);
+
+    // Grid (10ft squares)
+    if (showGrid) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+      ctx.lineWidth = 0.5;
+      for (let fx = 0; fx <= lotW; fx += 10) {
+        ctx.beginPath(); ctx.moveTo(ftX(fx), lot.y); ctx.lineTo(ftX(fx), lot.y + lot.h); ctx.stroke();
+      }
+      for (let fy = 0; fy <= lotH; fy += 10) {
+        ctx.beginPath(); ctx.moveTo(lot.x, ftY(fy)); ctx.lineTo(lot.x + lot.w, ftY(fy)); ctx.stroke();
+      }
+    }
+
+    // Lot boundary
+    ctx.strokeStyle = '#0d2d4a';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(lot.x, lot.y, lot.w, lot.h);
+
+    // Lot dimensions
+    if (showDimLabels) {
+      ctx.fillStyle = '#0d2d4a';
+      ctx.font = 'bold 11px DM Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(lotW + '\'', lot.x + lot.w / 2, lot.y - 3);
+      ctx.fillText(lotW + '\'', lot.x + lot.w / 2, lot.y + lot.h + 45);
+      ctx.save();
+      ctx.translate(lot.x - 8, lot.y + lot.h / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(lotH + '\'', 0, 0);
+      ctx.restore();
+      ctx.save();
+      ctx.translate(lot.x + lot.w + 8, lot.y + lot.h / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.fillText(lotH + '\'', 0, 0);
+      ctx.restore();
+    }
+
+    // Setback lines
+    if (showSetbacks) {
+      ctx.setLineDash([8, 4]);
+      ctx.lineWidth = 1.5;
+
+      // 25' front setback (from Stevens Ln)
+      ctx.strokeStyle = '#c62828';
+      ctx.beginPath();
+      ctx.moveTo(lot.x, ftY(25));
+      ctx.lineTo(lot.x + lot.w, ftY(25));
+      ctx.stroke();
+
+      // 5' side setbacks (both sides)
+      ctx.strokeStyle = '#7b1fa2';
+      ctx.beginPath();
+      ctx.moveTo(ftX(5), lot.y);
+      ctx.lineTo(ftX(5), lot.y + lot.h);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(ftX(lotW - 5), lot.y);
+      ctx.lineTo(ftX(lotW - 5), lot.y + lot.h);
+      ctx.stroke();
+
+      ctx.setLineDash([]);
+
+      if (showDimLabels) {
+        ctx.font = '9px DM Sans, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#c62828';
+        ctx.fillText('25\' front setback', lot.x + 4, ftY(25) - 4);
+        ctx.fillStyle = '#7b1fa2';
+        ctx.fillText('5\'', ftX(5) + 3, ftY(30));
+        ctx.textAlign = 'right';
+        ctx.fillText('5\'', ftX(lotW - 5) - 3, ftY(30));
+      }
+    }
+
+    // 18' utility easement (south/back boundary)
+    if (showEasements) {
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = '#e65100';
+      ctx.lineWidth = 1;
+      const ueY = lotH - 18;
+      ctx.fillStyle = 'rgba(255,152,0,0.07)';
+      ctx.fillRect(lot.x, ftY(ueY), lot.w, 18 * S);
+      ctx.beginPath();
+      ctx.moveTo(lot.x, ftY(ueY));
+      ctx.lineTo(lot.x + lot.w, ftY(ueY));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (showDimLabels) {
+        ctx.fillStyle = '#e65100';
+        ctx.font = '9px DM Sans, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('18\' utility easement', lot.x + 4, ftY(ueY) + 12);
+      }
+    }
+
+    // Fencing — left side, right side, and back
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = '#6d4c41';
+    ctx.lineWidth = 2;
+    // Left fence
+    ctx.beginPath();
+    ctx.moveTo(ftX(1), ftY(25));
+    ctx.lineTo(ftX(1), ftY(lotH - 1));
+    ctx.stroke();
+    // Right fence
+    ctx.beginPath();
+    ctx.moveTo(ftX(lotW - 1), ftY(25));
+    ctx.lineTo(ftX(lotW - 1), ftY(lotH - 1));
+    ctx.stroke();
+    // Back fence
+    ctx.beginPath();
+    ctx.moveTo(ftX(1), ftY(lotH - 1));
+    ctx.lineTo(ftX(lotW - 1), ftY(lotH - 1));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#6d4c41';
+    ctx.font = '8px DM Sans, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('fence', ftX(2), ftY(75));
+    ctx.textAlign = 'right';
+    ctx.fillText('fence', ftX(lotW - 2), ftY(75));
+    ctx.textAlign = 'center';
+    ctx.fillText('fence', ftX(lotW / 2), ftY(lotH - 3));
+
+    // Driveway (concrete, from Stevens Ln to house)
+    ctx.fillStyle = '#d0cfc8';
+    ctx.fillRect(ftX(35), lot.y, 14 * S, 30 * S);
+    ctx.fillStyle = '#aaa';
+    ctx.font = '9px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Driveway', ftX(42), ftY(15));
+
+    // Draw buildings
+    for (const key of ['house', 'garage', 'mil']) {
+      const b = buildings[key];
+      const bx = ftX(b.x), by = ftY(b.y);
+      const bw = b.w * S, bh = b.h * S;
+
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
+      ctx.fillRect(bx + 3, by + 3, bw, bh);
+
+      ctx.fillStyle = b.color;
+      ctx.fillRect(bx, by, bw, bh);
+      ctx.strokeStyle = b.stroke;
+      ctx.lineWidth = b.locked ? 2 : 2.5;
+      if (!b.locked) ctx.setLineDash([6, 3]);
+      ctx.strokeRect(bx, by, bw, bh);
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = b.stroke;
+      ctx.font = 'bold 11px DM Sans, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(b.label, bx + bw / 2, by + bh / 2 - 4);
+      ctx.font = '10px DM Sans, sans-serif';
+      ctx.fillText(b.sub, bx + bw / 2, by + bh / 2 + 10);
+
+      if (showDimLabels) {
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.font = '9px DM Mono, monospace';
+        ctx.fillText(b.w + '\' x ' + b.h + '\'', bx + bw / 2, by + bh / 2 + 22);
+      }
+
+      if (!b.locked) {
+        ctx.fillStyle = b.stroke;
+        ctx.globalAlpha = 0.3;
+        const cx = bx + bw / 2, cy = by + bh - 14;
+        ctx.beginPath(); ctx.moveTo(cx, cy - 6); ctx.lineTo(cx + 4, cy - 2); ctx.lineTo(cx - 4, cy - 2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(cx, cy + 6); ctx.lineTo(cx + 4, cy + 2); ctx.lineTo(cx - 4, cy + 2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(cx - 6, cy); ctx.lineTo(cx - 2, cy - 4); ctx.lineTo(cx - 2, cy + 4); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(cx + 6, cy); ctx.lineTo(cx + 2, cy - 4); ctx.lineTo(cx + 2, cy + 4); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Breezeway auto-connect
+    const house = buildings.house, mil = buildings.mil, garage = buildings.garage;
+
+    function drawBreezeway(from, to) {
+      const fromR = ftX(from.x + from.w);
+      const fromCY = ftY(from.y + from.h / 2);
+      const toL = ftX(to.x);
+      const toCY = ftY(to.y + to.h / 2);
+      const gap = toL - fromR;
+      if (gap > 0 && gap < 50 * S) {
+        const midY = (fromCY + toCY) / 2;
+        const brzH = 8 * S;
+        ctx.fillStyle = 'rgba(197,202,233,0.5)';
+        ctx.fillRect(fromR, midY - brzH / 2, gap, brzH);
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = '#283593';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(fromR, midY - brzH / 2, gap, brzH);
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#283593';
+        ctx.font = '9px DM Sans, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Breezeway', fromR + gap / 2, midY + 3);
+        ctx.fillText(Math.round(gap / S) + '\'', fromR + gap / 2, midY + 14);
+      }
+    }
+
+    const milDist = Math.abs(mil.x - (house.x + house.w));
+    const garDist = Math.abs(garage.x - (house.x + house.w));
+    if (milDist <= garDist) drawBreezeway(house, mil);
+    else drawBreezeway(house, garage);
+
+    // Connect MIL to garage if stacked vertically
+    const milBot = ftY(mil.y + mil.h), garTop = ftY(garage.y);
+    if (Math.abs(mil.x - garage.x) < 10 && garTop - milBot > 0 && garTop - milBot < 15 * S) {
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = '#1565c0';
+      ctx.lineWidth = 1;
+      const cx = ftX(Math.max(mil.x, garage.x) + Math.min(mil.w, garage.w) / 2);
+      ctx.beginPath(); ctx.moveTo(cx, milBot); ctx.lineTo(cx, garTop); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Compass
+    const compX = W - 55, compY = 40;
+    ctx.beginPath(); ctx.arc(compX, compY, 20, 0, Math.PI * 2);
+    ctx.fillStyle = 'white'; ctx.fill();
+    ctx.strokeStyle = '#0d2d4a'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#0d2d4a';
+    ctx.font = 'bold 14px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('N', compX, compY - 2);
+    ctx.beginPath(); ctx.moveTo(compX, compY - 18); ctx.lineTo(compX - 4, compY - 12); ctx.lineTo(compX + 4, compY - 12); ctx.fill();
+
+    // Legend
+    ctx.font = '10px DM Sans, sans-serif';
+    ctx.textAlign = 'left';
+    const legX = 15, legY = H - 80;
+    ctx.fillStyle = '#ddd8cc'; ctx.fillRect(legX, legY, 12, 12);
+    ctx.strokeStyle = '#0d2d4a'; ctx.lineWidth = 1; ctx.strokeRect(legX, legY, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('Existing house (locked)', legX + 18, legY + 10);
+    ctx.fillStyle = '#c5cae9'; ctx.fillRect(legX, legY + 18, 12, 12);
+    ctx.strokeStyle = '#283593'; ctx.strokeRect(legX, legY + 18, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('MIL Suite (drag to move)', legX + 18, legY + 28);
+    ctx.fillStyle = '#bbdefb'; ctx.fillRect(legX, legY + 36, 12, 12);
+    ctx.strokeStyle = '#1565c0'; ctx.strokeRect(legX, legY + 36, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('Garage (drag to move)', legX + 18, legY + 46);
+    ctx.fillStyle = '#c62828'; ctx.fillText('--- 25\' front setback', legX, legY + 62);
+    ctx.fillStyle = '#7b1fa2'; ctx.fillText('--- 5\' side setbacks', legX + 150, legY + 62);
+    ctx.fillStyle = '#e65100'; ctx.fillText('--- 18\' utility easement', legX + 300, legY + 62);
+
+    // Info panel
+    const totalFP = buildings.house.w * buildings.house.h + buildings.mil.w * buildings.mil.h + buildings.garage.w * buildings.garage.h;
+    document.getElementById('piUsed').textContent = totalFP.toLocaleString() + ' sqft';
+    const buildableW = lotW - 5 - 5;
+    const buildableH = lotH - 25 - 18;
+    document.getElementById('piBuildable').textContent = (buildableW * buildableH).toLocaleString() + ' sqft';
+  }
+
+  // Mouse/touch
+  function getMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const sx = canvas.width / rect.width, sy = canvas.height / rect.height;
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (cx - rect.left) * sx, y: (cy - rect.top) * sy };
+  }
+
+  function hitTest(mx, my) {
+    for (const key of ['mil', 'garage']) {
+      const b = buildings[key];
+      const bx = ftX(b.x), by = ftY(b.y), bw = b.w * S, bh = b.h * S;
+      if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) return key;
+    }
+    return null;
+  }
+
+  function onDown(e) {
+    e.preventDefault();
+    const pos = getMousePos(e);
+    const hit = hitTest(pos.x, pos.y);
+    if (hit) {
+      dragging = hit;
+      dragOffX = pos.x - ftX(buildings[hit].x);
+      dragOffY = pos.y - ftY(buildings[hit].y);
+      canvas.style.cursor = 'grabbing';
+    }
+  }
+  function onMove(e) {
+    if (!dragging) { const p = getMousePos(e); canvas.style.cursor = hitTest(p.x, p.y) ? 'grab' : 'default'; return; }
+    e.preventDefault();
+    const pos = getMousePos(e), b = buildings[dragging];
+    let nx = (pos.x - dragOffX - lot.x) / S, ny = (pos.y - dragOffY - lot.y) / S;
+    if (snapToGrid) { nx = Math.round(nx / 5) * 5; ny = Math.round(ny / 5) * 5; }
+    b.x = Math.max(0, Math.min(lotW - b.w, nx));
+    b.y = Math.max(0, Math.min(lotH - b.h, ny));
+    draw();
+  }
+  function onUp() { if (dragging) { dragging = null; canvas.style.cursor = 'default'; } }
+
+  canvas.addEventListener('mousedown', onDown);
+  canvas.addEventListener('mousemove', onMove);
+  canvas.addEventListener('mouseup', onUp);
+  canvas.addEventListener('mouseleave', onUp);
+  canvas.addEventListener('touchstart', onDown, { passive: false });
+  canvas.addEventListener('touchmove', onMove, { passive: false });
+  canvas.addEventListener('touchend', onUp);
+
+  window.toggleGrid = function(btn) { showGrid = !showGrid; btn.classList.toggle('active'); draw(); };
+  window.toggleSetbacks = function(btn) { showSetbacks = !showSetbacks; btn.classList.toggle('active'); draw(); };
+  window.toggleEasements = function(btn) { showEasements = !showEasements; btn.classList.toggle('active'); draw(); };
+  window.toggleDims = function(btn) { showDimLabels = !showDimLabels; btn.classList.toggle('active'); draw(); };
+  window.toggleSnap = function(btn) { snapToGrid = !snapToGrid; btn.classList.toggle('active'); };
+  window.resetBuildings = function() {
+    buildings.mil.x = 73; buildings.mil.y = 35;
+    buildings.garage.x = 73; buildings.garage.y = 65;
+    draw();
+  };
+
+  window.updateBuildingSize = function() {
+    const mw = +document.getElementById('milW').value;
+    const md = +document.getElementById('milD').value;
+    const gw = +document.getElementById('garW').value;
+    const gd = +document.getElementById('garD').value;
+    buildings.mil.w = mw; buildings.mil.h = md;
+    buildings.mil.sub = (mw * md) + ' sqft';
+    buildings.garage.w = gw; buildings.garage.h = gd;
+    buildings.garage.sub = (gw * gd) + ' sqft';
+    document.getElementById('milWOut').textContent = mw + '\'';
+    document.getElementById('milDOut').textContent = md + '\'';
+    document.getElementById('garWOut').textContent = gw + '\'';
+    document.getElementById('garDOut').textContent = gd + '\'';
+    document.getElementById('pdMil').textContent = mw + '\' x ' + md + '\' (' + (mw * md) + ' sqft)';
+    document.getElementById('pdGar').textContent = gw + '\' x ' + gd + '\' (' + (gw * gd) + ' sqft)';
+    draw();
+  };
+
+  // Expose draw globally for tab switch redraw
+  window._plannerDraw = draw;
+
+  // Initial draw (delayed to handle hidden section)
+  setTimeout(draw, 100);
+})();
 </script>
 </body>
 </html>
