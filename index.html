@@ -722,7 +722,7 @@
     </div>
 
     <div class="alert alert-info">
-      <strong>How to use:</strong> Drag the blue buildings (MIL Suite, Garage) to position them on the lot. The existing house is locked in place. Setback lines and easements are shown — keep new construction inside the buildable area. Use the toolbar to toggle grid, setbacks, and dimensions.
+      <strong>How to use:</strong> Drag any building to position it. Use the ruler on the top and left edges to measure feet. Setback lines and easements are shown. Use the toolbar to toggle grid, setbacks, and dimensions.
     </div>
 
     <div class="planner-container">
@@ -1384,14 +1384,10 @@ calcROI();
     // House 47.8x37.9: straddles Lot 2/3 internal line. ~34' from west, ~38' from Kathy Lane.
     // Math: 34 + 47.8 + 38.2 = 120' ✓. Right edge at x=82 (into Lot 2).
     // Front at y=32 (32' from north property line / ~62' from Stevens Lane centerline).
-    house:    { x: 34, y: 32, w: 48, h: 38, color: '#ddd8cc', stroke: '#0d2d4a', label: 'House', sub: '47.8\'x37.9\' · 1,746 sqft', locked: true },
-    // Porch — covered/open, front of house
-    porch:    { x: 36, y: 22, w: 14, h: 10, color: 'rgba(200,190,175,0.5)', stroke: '#8d6e63', label: 'Porch', sub: 'covered · open', locked: true },
-    // Carport (hatched on survey) — northwest of house, accessed from left driveway
-    carport:  { x: 20, y: 22, w: 14, h: 22, color: 'rgba(200,190,175,0.5)', stroke: '#5d4037', label: 'Carport', sub: 'covered · open', locked: true },
-    // Back slab (23x23) — rear of Lot 2, accessed via Drive 2. ~10' from rear easement line.
-    // Lot depth 157', easement at 139' from front. Slab front: 139-23=116'. Use 113' for some buffer.
-    slab:     { x: 80, y: 113, w: 23, h: 23, color: '#d5cfc5', stroke: '#4e342e', label: '23\'x23\' Slab', sub: 'build from here', locked: true },
+    house:    { x: 34, y: 32, w: 48, h: 38, color: '#ddd8cc', stroke: '#0d2d4a', label: 'House', sub: '47.8\'x37.9\' · 1,746 sqft', locked: false },
+    porch:    { x: 36, y: 22, w: 14, h: 10, color: 'rgba(200,190,175,0.5)', stroke: '#8d6e63', label: 'Porch', sub: 'covered · open', locked: false },
+    carport:  { x: 20, y: 22, w: 14, h: 22, color: 'rgba(200,190,175,0.5)', stroke: '#5d4037', label: 'Carport', sub: 'covered · open', locked: false },
+    slab:     { x: 80, y: 113, w: 23, h: 23, color: '#d5cfc5', stroke: '#4e342e', label: '23\'x23\' Slab', sub: 'build from here', locked: false },
     mil:      { x: 80, y: 88, w: 20, h: 25, color: '#c5cae9', stroke: '#283593', label: 'MIL Suite', sub: '500 sqft', locked: false },
     garage:   { x: 80, y: 113, w: 24, h: 24, color: '#bbdefb', stroke: '#1565c0', label: 'Garage', sub: '576 sqft · expands slab', locked: false },
   };
@@ -1496,6 +1492,34 @@ calcROI();
       ctx.rotate(Math.PI / 2);
       ctx.fillText(lotH + '\'', 0, 0);
       ctx.restore();
+    }
+
+    // Ruler — top edge (X axis, feet) and left edge (Y axis, feet)
+    ctx.strokeStyle = '#0d2d4a';
+    ctx.fillStyle = '#0d2d4a';
+    ctx.lineWidth = 1;
+    ctx.font = '8px DM Mono, monospace';
+    ctx.textAlign = 'center';
+    // Top ruler
+    for (let ft = 0; ft <= lotW; ft += 10) {
+      const rx = ftX(ft);
+      const major = ft % 20 === 0;
+      ctx.beginPath();
+      ctx.moveTo(rx, lot.y);
+      ctx.lineTo(rx, lot.y - (major ? 10 : 5));
+      ctx.stroke();
+      if (major) ctx.fillText(ft + '\'', rx, lot.y - 12);
+    }
+    // Left ruler
+    ctx.textAlign = 'right';
+    for (let ft = 0; ft <= lotH; ft += 10) {
+      const ry = ftY(ft);
+      const major = ft % 20 === 0;
+      ctx.beginPath();
+      ctx.moveTo(lot.x, ry);
+      ctx.lineTo(lot.x - (major ? 10 : 5), ry);
+      ctx.stroke();
+      if (major) ctx.fillText(ft + '\'', lot.x - 12, ry + 3);
     }
 
     // Setback lines
