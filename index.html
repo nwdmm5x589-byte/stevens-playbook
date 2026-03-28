@@ -746,14 +746,14 @@
         <div class="pi"><div class="pv" id="piUsed">—</div><div class="pl">Total Footprint</div></div>
       </div>
       <div class="planner-dims" id="plannerDims">
-        <div class="pdim"><span class="pdl">House (Lot 3 side)</span><span class="pdv">47.8'×37.9' · ~6' from west · ~66' to east · 32' from front</span></div>
-        <div class="pdim"><span class="pdl">Carport (est.)</span><span class="pdv">~20'×22' · open/covered · right side of house</span></div>
+        <div class="pdim"><span class="pdl">House (straddles Lot 2/3)</span><span class="pdv">47.8'×37.9' · ~34' from west · ~38' from east · ~32' from front</span></div>
+        <div class="pdim"><span class="pdl">Carport (est.)</span><span class="pdv">open/covered · east side of house · per survey</span></div>
         <div class="pdim"><span class="pdl">Back slab (build anchor)</span><span class="pdv">23'×23' · 87' behind house · 26' from rear easement</span></div>
         <div class="pdim"><span class="pdl">MIL Suite</span><span class="pdv" id="pdMil">20' x 25' (500 sqft)</span></div>
         <div class="pdim"><span class="pdl">Garage (2-car)</span><span class="pdv" id="pdGar">24' x 24' (576 sqft)</span></div>
       </div>
       <div class="planner-help">
-        Lot: Lots 2 &amp; 3, Block 1, Shelter Cove Sec 5 — 0.432 acres. Corner lot: Stevens Lane (north, 60' ROW) &amp; Charlotte Drive (east). 25' building setback from roads. 18' utility easement along south boundary. Survey by Give'M Heck, Inc., Job #979-001B.
+        Lot: Lots 2 &amp; 3, Block 1, Shelter Cove Sec 5 — 0.432 acres (18,808 sqft). Stevens Lane (north, 60' ROW). 5' side setbacks. 25' front setback. 18' utility easement along south boundary. Survey by Give'M Heck, Inc., Job #979-001B.
       </div>
     </div>
 
@@ -1381,15 +1381,14 @@ calcROI();
 
   const buildings = {
     // Lot: 120' wide x 157' deep. Two lots: Lot 3 (left, 60') + Lot 2 (right, 60').
-    // House 47.8x37.9: positioned on Lot 3, pushed left. 6' from left boundary (1' past 5' setback).
-    // Right edge at 54', leaving 6' to the Lot 2/3 line, then 60' more = 66' to right lot boundary.
-    // Math: 6 + 47.8 + 66.2 = 120' ✓
-    // Front at y=32 (7' past 25' setback).
-    house:    { x: 6, y: 32, w: 48, h: 38, color: '#ddd8cc', stroke: '#0d2d4a', label: 'House', sub: '47.8\'x37.9\' · 1,746 sqft', locked: true },
-    // Porch (hatched on survey) — front of house, covered/open, est. ~10'x10'
-    porch:    { x: 20, y: 22, w: 20, h: 10, color: 'rgba(200,190,175,0.5)', stroke: '#8d6e63', label: 'Porch', sub: 'covered · open', locked: true },
-    // Carport (hatched on survey) — separate from house, covered/open, right side, est. ~20'x20'
-    carport:  { x: 54, y: 32, w: 20, h: 22, color: 'rgba(200,190,175,0.5)', stroke: '#5d4037', label: 'Carport', sub: 'covered · open', locked: true },
+    // House 47.8x37.9: straddles Lot 2/3 internal line. ~34' from west, ~38' from Kathy Lane.
+    // Math: 34 + 47.8 + 38.2 = 120' ✓. Right edge at x=82 (into Lot 2).
+    // Front at y=32 (32' from north property line / ~62' from Stevens Lane centerline).
+    house:    { x: 34, y: 32, w: 48, h: 38, color: '#ddd8cc', stroke: '#0d2d4a', label: 'House', sub: '47.8\'x37.9\' · 1,746 sqft', locked: true },
+    // Porch — covered/open, front-left of house
+    porch:    { x: 36, y: 22, w: 14, h: 10, color: 'rgba(200,190,175,0.5)', stroke: '#8d6e63', label: 'Porch', sub: 'covered · open', locked: true },
+    // Carport (hatched on survey) — east/right side of house, open/covered structure
+    carport:  { x: 82, y: 32, w: 20, h: 22, color: 'rgba(200,190,175,0.5)', stroke: '#5d4037', label: 'Carport', sub: 'covered · open', locked: true },
     // Back slab (23x23) — rear of Lot 2, accessed via Drive 2. ~10' from rear easement line.
     // Lot depth 157', easement at 139' from front. Slab front: 139-23=116'. Use 113' for some buffer.
     slab:     { x: 80, y: 113, w: 23, h: 23, color: '#d5cfc5', stroke: '#4e342e', label: '23\'x23\' Slab', sub: 'build from here', locked: true },
@@ -1436,7 +1435,7 @@ calcROI();
     ctx.translate(lot.x + lot.w + 24, lot.y + lot.h / 2);
     ctx.rotate(Math.PI / 2);
     ctx.textAlign = 'center';
-    ctx.fillText('Neighbor (Lot 1)', 0, 0);
+    ctx.fillText('Neighbor (Lot 1 — east)', 0, 0);
     ctx.restore();
 
     // Back label
@@ -1587,40 +1586,51 @@ calcROI();
     ctx.textAlign = 'center';
     ctx.fillText('fence', ftX(lotW / 2), ftY(lotH - 3));
 
-    // Drive 1 — Lot 3 side, main drive enters Stevens Ln between house and lot center
-    // House right edge at x=54, so drive runs from ~x=30 down past carport to house
+    // Drive 1 — west side, main conc. drive from Stevens Ln to house/carport area
+    // House left edge at x=34, drive fits to the left: x=8 to x=22 (14' wide)
     ctx.fillStyle = '#d0cfc8';
-    ctx.fillRect(ftX(15), lot.y, 10 * S, 55 * S);
+    ctx.fillRect(ftX(8), lot.y, 14 * S, 60 * S);
+    // Concrete apron at Stevens Ln entrance (slightly wider flare)
+    ctx.fillStyle = '#c8c7c0';
+    ctx.fillRect(ftX(6), lot.y - 8, 18 * S, 8);
     ctx.fillStyle = '#999';
     ctx.font = '8px DM Sans, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Drive 1', ftX(20), ftY(10));
+    ctx.fillText('Conc. Drive', ftX(15), ftY(10));
+    ctx.fillText('(apron)', ftX(15), ftY(17));
 
-    // Drive 2 — Lot 2 side, long drive from Stevens Ln all the way to 23x23 back slab (y=113+23=136)
+    // Drive 2 — Lot 2 side, long drive from Stevens Ln all the way to 23x23 back slab
     ctx.fillStyle = '#d0cfc8';
     ctx.fillRect(ftX(88), lot.y, 10 * S, 136 * S);
+    // Apron at Stevens Ln entrance
+    ctx.fillStyle = '#c8c7c0';
+    ctx.fillRect(ftX(86), lot.y - 8, 14 * S, 8);
     ctx.fillStyle = '#999';
     ctx.font = '8px DM Sans, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Drive 2', ftX(93), ftY(10));
-    ctx.fillText('(to slab)', ftX(93), ftY(18));
+    ctx.fillText('Conc. Drive 2', ftX(93), ftY(10));
+    ctx.fillText('(to slab)', ftX(93), ftY(17));
 
-    // Chain link fence + gate (front, per survey)
+    // Chain link fence + gates (front, per survey)
     ctx.setLineDash([2, 2]);
     ctx.strokeStyle = '#888';
     ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(ftX(5), ftY(26)); ctx.lineTo(ftX(30), ftY(26)); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(ftX(40), ftY(26)); ctx.lineTo(ftX(78), ftY(26)); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(ftX(88), ftY(26)); ctx.lineTo(ftX(115), ftY(26)); ctx.stroke();
+    // Left of Drive 1 gate
+    ctx.beginPath(); ctx.moveTo(ftX(5), ftY(26)); ctx.lineTo(ftX(8), ftY(26)); ctx.stroke();
+    // Between drives
+    ctx.beginPath(); ctx.moveTo(ftX(22), ftY(26)); ctx.lineTo(ftX(88), ftY(26)); ctx.stroke();
+    // Right of Drive 2 gate
+    ctx.beginPath(); ctx.moveTo(ftX(98), ftY(26)); ctx.lineTo(ftX(115), ftY(26)); ctx.stroke();
     ctx.setLineDash([]);
-    // Gate symbols
+    // Gate openings
     ctx.strokeStyle = '#666'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(ftX(30), ftY(26)); ctx.lineTo(ftX(40), ftY(26)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ftX(8), ftY(26)); ctx.lineTo(ftX(22), ftY(26)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ftX(88), ftY(26)); ctx.lineTo(ftX(98), ftY(26)); ctx.stroke();
     ctx.fillStyle = '#888';
     ctx.font = '8px DM Sans, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('gate', ftX(35), ftY(24));
-    ctx.fillText('gate', ftX(83), ftY(24));
+    ctx.fillText('gate', ftX(15), ftY(24));
+    ctx.fillText('gate', ftX(93), ftY(24));
 
     // Draw buildings
     for (const key of ['porch', 'carport', 'house', 'slab', 'garage', 'mil']) {
