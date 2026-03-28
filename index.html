@@ -749,8 +749,8 @@
         <div class="pdim"><span class="pdl">House (straddles Lot 2/3)</span><span class="pdv">47.8'×37.9' · ~34' from west · ~38' from east · ~32' from front</span></div>
         <div class="pdim"><span class="pdl">Carport</span><span class="pdv">18'×38' · attached left side · 2 boats or 2 cars (8' ea)</span></div>
         <div class="pdim"><span class="pdl">Back slab (build anchor)</span><span class="pdv">23'×23' · 87' behind house · 26' from rear easement</span></div>
-        <div class="pdim"><span class="pdl">MIL Suite</span><span class="pdv" id="pdMil">20' x 25' (500 sqft)</span></div>
-        <div class="pdim"><span class="pdl">Garage (2-car)</span><span class="pdv" id="pdGar">24' x 24' (576 sqft)</span></div>
+        <div class="pdim"><span class="pdl">MIL Suite</span><span class="pdv" id="pdMil">25' x 25' (625 sqft)</span></div>
+        <div class="pdim"><span class="pdl">Garage (2-car)</span><span class="pdv" id="pdGar">24' x 30' (720 sqft)</span></div>
       </div>
       <div class="planner-help">
         Lot: Lots 2 &amp; 3, Block 1, Shelter Cove Sec 5 — 0.432 acres (18,808 sqft). Stevens Lane (north, 60' ROW). 5' side setbacks. 25' front setback. 18' utility easement along south boundary. Survey by Give'M Heck, Inc., Job #979-001B.
@@ -763,7 +763,7 @@
         <div>
           <div class="input-group">
             <label>MIL Suite Width (ft)</label>
-            <input type="range" min="16" max="30" step="1" value="20" id="milW" oninput="updateBuildingSize()">
+            <input type="range" min="16" max="30" step="1" value="25" id="milW" oninput="updateBuildingSize()">
             <span id="milWOut" style="font-size:13px;">20'</span>
           </div>
           <div class="input-group">
@@ -780,8 +780,8 @@
           </div>
           <div class="input-group">
             <label>Garage Depth (ft)</label>
-            <input type="range" min="20" max="30" step="1" value="24" id="garD" oninput="updateBuildingSize()">
-            <span id="garDOut" style="font-size:13px;">24'</span>
+            <input type="range" min="20" max="35" step="1" value="30" id="garD" oninput="updateBuildingSize()">
+            <span id="garDOut" style="font-size:13px;">30'</span>
           </div>
         </div>
       </div>
@@ -1388,8 +1388,8 @@ calcROI();
     porch:    { x: 36, y: 52, w: 14, h: 10, color: 'rgba(200,190,175,0.5)', stroke: '#8d6e63', label: 'Porch', sub: 'covered · open', locked: false },
     carport:  { x: 16, y: 62, w: 18, h: 38, color: 'rgba(200,190,175,0.5)', stroke: '#5d4037', label: 'Carport', sub: '18\'×38\' · 2 boats/cars · attached left', locked: false },
     slab:     { x: 80, y: 113, w: 23, h: 23, color: '#d5cfc5', stroke: '#4e342e', label: '23\'x23\' Slab', sub: 'build from here', locked: false },
-    mil:      { x: 80, y: 88, w: 20, h: 25, color: '#c5cae9', stroke: '#283593', label: 'MIL Suite', sub: '500 sqft', locked: false },
-    garage:   { x: 80, y: 113, w: 24, h: 24, color: '#bbdefb', stroke: '#1565c0', label: 'Garage', sub: '576 sqft · expands slab', locked: false },
+    mil:      { x: 60, y: 108, w: 25, h: 25, color: '#c5cae9', stroke: '#283593', label: 'MIL Suite', sub: '625 sqft', locked: false },
+    garage:   { x: 16, y: 100, w: 24, h: 30, color: '#bbdefb', stroke: '#1565c0', label: 'Garage', sub: '720 sqft', locked: false },
   };
 
   let dragging = null, dragOffX = 0, dragOffY = 0;
@@ -1838,8 +1838,8 @@ calcROI();
   window.toggleDims = function(btn) { showDimLabels = !showDimLabels; btn.classList.toggle('active'); draw(); };
   window.toggleSnap = function(btn) { snapToGrid = !snapToGrid; btn.classList.toggle('active'); };
   window.resetBuildings = function() {
-    buildings.mil.x = 80; buildings.mil.y = 88;
-    buildings.garage.x = 80; buildings.garage.y = 113;
+    buildings.mil.x = 60; buildings.mil.y = 108;
+    buildings.garage.x = 16; buildings.garage.y = 100;
     draw();
   };
 
