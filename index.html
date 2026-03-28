@@ -1400,7 +1400,6 @@ calcROI();
     carport:  { x: 16, y: 62, w: 24, h: 38, color: 'rgba(200,190,175,0.5)', stroke: '#5d4037', label: 'Carport', sub: '24\'×38\' · 2 boats/cars', locked: false },
     mil:      { x: 60, y: 108, w: 25, h: 25, color: '#c5cae9', stroke: '#283593', label: 'MIL Suite', sub: '625 sqft', locked: false },
     garage:   { x: 16, y: 100, w: 24, h: 30, color: '#bbdefb', stroke: '#1565c0', label: 'Garage', sub: '720 sqft', locked: false },
-    shrubs:   { x: 58, y: 100, w: 30, h: 5, color: 'rgba(60,140,60,0.35)', stroke: '#2e7d32', label: 'Fence / Shrubs', sub: '', locked: false },
     deck:     { x: 60, y: 133, w: 20, h: 10, color: '#d7cba0', stroke: '#795548', label: 'Deck', sub: '', locked: false },
     pavilion: { x: 75, y: 108, w: 20, h: 20, color: 'rgba(255,235,180,0.6)', stroke: '#f57f17', label: 'Pavilion', sub: '', locked: false },
     pool:     { x: 88, y: 118, w: 16, h: 12, color: 'rgba(100,180,255,0.5)', stroke: '#0277bd', label: 'Pool', sub: 'above-ground', locked: false },
@@ -1671,7 +1670,7 @@ calcROI();
     ctx.fillText('gate', ftX(93), ftY(24));
 
     // Draw buildings
-    for (const key of ['porch', 'shrubs', 'deck', 'carport', 'house', 'garage', 'mil', 'pavilion', 'pool']) {
+    for (const key of ['porch', 'deck', 'carport', 'house', 'garage', 'mil', 'pavilion', 'pool']) {
       const b = buildings[key];
       const bx = ftX(b.x), by = ftY(b.y);
       const bw = b.w * S, bh = b.h * S;
@@ -1773,9 +1772,6 @@ calcROI();
     ctx.fillStyle = 'rgba(100,180,255,0.7)'; ctx.fillRect(legX, legY + 54, 12, 12);
     ctx.strokeStyle = '#0277bd'; ctx.strokeRect(legX, legY + 54, 12, 12);
     ctx.fillStyle = '#333'; ctx.fillText('Pool', legX + 18, legY + 64);
-    ctx.fillStyle = 'rgba(60,140,60,0.5)'; ctx.fillRect(legX + 120, legY + 54, 12, 12);
-    ctx.strokeStyle = '#2e7d32'; ctx.strokeRect(legX + 120, legY + 54, 12, 12);
-    ctx.fillStyle = '#333'; ctx.fillText('Fence / Shrubs', legX + 138, legY + 64);
     ctx.fillStyle = '#c62828'; ctx.fillText('--- 25\' front setback', legX, legY + 80);
     ctx.fillStyle = '#7b1fa2'; ctx.fillText('--- 5\' side setbacks', legX + 160, legY + 80);
     ctx.fillStyle = '#e65100'; ctx.fillText('--- 18\' utility easement', legX + 310, legY + 80);
@@ -1798,7 +1794,7 @@ calcROI();
   }
 
   function hitTest(mx, my) {
-    const order = ['pool', 'pavilion', 'mil', 'garage', 'shrubs', 'deck', 'house', 'carport', 'porch'];
+    const order = ['pool', 'pavilion', 'mil', 'garage', 'deck', 'house', 'carport', 'porch'];
     for (const key of order) {
       const b = buildings[key];
       if (key === 'pool') {
@@ -1883,7 +1879,6 @@ calcROI();
     buildings.pavilion.x = 75; buildings.pavilion.y = 108;
     buildings.deck.x = 60; buildings.deck.y = 133;
     buildings.pool.x = 88; buildings.pool.y = 118;
-    buildings.shrubs.x = 58; buildings.shrubs.y = 100;
     draw();
   };
 
