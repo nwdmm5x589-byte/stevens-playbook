@@ -1380,14 +1380,21 @@ calcROI();
   let showGrid = true, showSetbacks = true, showEasements = true, showDimLabels = true, snapToGrid = false;
 
   const buildings = {
-    // Lot: 120' wide x 157' deep. House 47.8x37.9 centered: x=(120-47.8)/2=36.1, front at y=32 (7' past 25' setback)
-    house:    { x: 36, y: 32, w: 48, h: 38, color: '#ddd8cc', stroke: '#0d2d4a', label: 'House', sub: '47.8\'x37.9\' · 1,746 sqft', locked: true },
-    // Carport attached near house right side — est. ~12'x22' from survey scale
-    carport:  { x: 84, y: 36, w: 12, h: 22, color: '#e8e0d0', stroke: '#5d4037', label: 'Carport', sub: 'est. 12\'x22\'', locked: true },
-    // Back slab (23x23) accessed via Drive 2 — rear of Lot 2, front edge ~108' from Stevens Ln
-    slab:     { x: 78, y: 108, w: 23, h: 23, color: '#d5cfc5', stroke: '#4e342e', label: '23\'x23\' Slab', sub: 'build from here', locked: true },
-    mil:      { x: 78, y: 83, w: 20, h: 25, color: '#c5cae9', stroke: '#283593', label: 'MIL Suite', sub: '500 sqft', locked: false },
-    garage:   { x: 78, y: 108, w: 24, h: 24, color: '#bbdefb', stroke: '#1565c0', label: 'Garage', sub: '576 sqft · expands slab', locked: false },
+    // Lot: 120' wide x 157' deep. Two lots: Lot 3 (left, 60') + Lot 2 (right, 60').
+    // House 47.8x37.9: positioned on Lot 3, pushed left. 6' from left boundary (1' past 5' setback).
+    // Right edge at 54', leaving 6' to the Lot 2/3 line, then 60' more = 66' to right lot boundary.
+    // Math: 6 + 47.8 + 66.2 = 120' ✓
+    // Front at y=32 (7' past 25' setback).
+    house:    { x: 6, y: 32, w: 48, h: 38, color: '#ddd8cc', stroke: '#0d2d4a', label: 'House', sub: '47.8\'x37.9\' · 1,746 sqft', locked: true },
+    // Porch (hatched on survey) — front of house, covered/open, est. ~10'x10'
+    porch:    { x: 20, y: 22, w: 20, h: 10, color: 'rgba(200,190,175,0.5)', stroke: '#8d6e63', label: 'Porch', sub: 'covered · open', locked: true },
+    // Carport (hatched on survey) — separate from house, covered/open, right side, est. ~20'x20'
+    carport:  { x: 54, y: 32, w: 20, h: 22, color: 'rgba(200,190,175,0.5)', stroke: '#5d4037', label: 'Carport', sub: 'covered · open', locked: true },
+    // Back slab (23x23) — rear of Lot 2, accessed via Drive 2. ~10' from rear easement line.
+    // Lot depth 157', easement at 139' from front. Slab front: 139-23=116'. Use 113' for some buffer.
+    slab:     { x: 80, y: 113, w: 23, h: 23, color: '#d5cfc5', stroke: '#4e342e', label: '23\'x23\' Slab', sub: 'build from here', locked: true },
+    mil:      { x: 80, y: 88, w: 20, h: 25, color: '#c5cae9', stroke: '#283593', label: 'MIL Suite', sub: '500 sqft', locked: false },
+    garage:   { x: 80, y: 113, w: 24, h: 24, color: '#bbdefb', stroke: '#1565c0', label: 'Garage', sub: '576 sqft · expands slab', locked: false },
   };
 
   let dragging = null, dragOffX = 0, dragOffY = 0;
@@ -1580,25 +1587,23 @@ calcROI();
     ctx.textAlign = 'center';
     ctx.fillText('fence', ftX(lotW / 2), ftY(lotH - 3));
 
-    // Driveway 1 — Lot 3, main driveway: enters Stevens Ln, runs to house
+    // Drive 1 — Lot 3 side, main drive enters Stevens Ln between house and lot center
+    // House right edge at x=54, so drive runs from ~x=30 down past carport to house
     ctx.fillStyle = '#d0cfc8';
-    // Approach from street to house
-    ctx.fillRect(ftX(30), lot.y, 10 * S, 40 * S);
-    // Pad in front of house (parking apron)
-    ctx.fillRect(ftX(30), ftY(36), 16 * S, 5 * S);
+    ctx.fillRect(ftX(15), lot.y, 10 * S, 55 * S);
     ctx.fillStyle = '#999';
     ctx.font = '8px DM Sans, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Conc. Drive', ftX(35), ftY(10));
+    ctx.fillText('Drive 1', ftX(20), ftY(10));
 
-    // Driveway 2 — Lot 2, second long driveway runs all the way back to the 23x23 slab
+    // Drive 2 — Lot 2 side, long drive from Stevens Ln all the way to 23x23 back slab (y=113+23=136)
     ctx.fillStyle = '#d0cfc8';
-    ctx.fillRect(ftX(78), lot.y, 10 * S, 131 * S); // 108+23=131, goes to back of slab
+    ctx.fillRect(ftX(88), lot.y, 10 * S, 136 * S);
     ctx.fillStyle = '#999';
     ctx.font = '8px DM Sans, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Conc. Drive 2', ftX(83), ftY(10));
-    ctx.fillText('(to back slab)', ftX(83), ftY(18));
+    ctx.fillText('Drive 2', ftX(93), ftY(10));
+    ctx.fillText('(to slab)', ftX(93), ftY(18));
 
     // Chain link fence + gate (front, per survey)
     ctx.setLineDash([2, 2]);
@@ -1618,7 +1623,7 @@ calcROI();
     ctx.fillText('gate', ftX(83), ftY(24));
 
     // Draw buildings
-    for (const key of ['house', 'carport', 'slab', 'garage', 'mil']) {
+    for (const key of ['porch', 'carport', 'house', 'slab', 'garage', 'mil']) {
       const b = buildings[key];
       const bx = ftX(b.x), by = ftY(b.y);
       const bw = b.w * S, bh = b.h * S;
@@ -1716,25 +1721,28 @@ calcROI();
     // Legend
     ctx.font = '10px DM Sans, sans-serif';
     ctx.textAlign = 'left';
-    const legX = 15, legY = H - 80;
+    const legX = 15, legY = H - 100;
     ctx.fillStyle = '#ddd8cc'; ctx.fillRect(legX, legY, 12, 12);
     ctx.strokeStyle = '#0d2d4a'; ctx.lineWidth = 1; ctx.strokeRect(legX, legY, 12, 12);
-    ctx.fillStyle = '#333'; ctx.fillText('House 47.8\'x37.9\' + carport (locked)', legX + 18, legY + 10);
-    ctx.fillStyle = '#d5cfc5'; ctx.fillRect(legX, legY + 18, 12, 12);
-    ctx.strokeStyle = '#4e342e'; ctx.strokeRect(legX, legY + 18, 12, 12);
-    ctx.fillStyle = '#333'; ctx.fillText('23\'x23\' back slab — build anchor (locked)', legX + 18, legY + 28);
-    ctx.fillStyle = '#c5cae9'; ctx.fillRect(legX, legY + 36, 12, 12);
-    ctx.strokeStyle = '#283593'; ctx.strokeRect(legX, legY + 36, 12, 12);
-    ctx.fillStyle = '#333'; ctx.fillText('MIL Suite (drag)', legX + 18, legY + 46);
-    ctx.fillStyle = '#bbdefb'; ctx.fillRect(legX + 140, legY + 36, 12, 12);
-    ctx.strokeStyle = '#1565c0'; ctx.strokeRect(legX + 140, legY + 36, 12, 12);
-    ctx.fillStyle = '#333'; ctx.fillText('Garage (drag)', legX + 158, legY + 46);
-    ctx.fillStyle = '#c62828'; ctx.fillText('--- 25\' front setback', legX, legY + 62);
-    ctx.fillStyle = '#7b1fa2'; ctx.fillText('--- 5\' side setbacks', legX + 160, legY + 62);
-    ctx.fillStyle = '#e65100'; ctx.fillText('--- 18\' utility easement', legX + 310, legY + 62);
+    ctx.fillStyle = '#333'; ctx.fillText('House 47.8\'x37.9\' (enclosed, locked)', legX + 18, legY + 10);
+    ctx.fillStyle = 'rgba(200,190,175,0.7)'; ctx.fillRect(legX, legY + 18, 12, 12);
+    ctx.strokeStyle = '#5d4037'; ctx.strokeRect(legX, legY + 18, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('Porch / Carport (covered open — locked)', legX + 18, legY + 28);
+    ctx.fillStyle = '#d5cfc5'; ctx.fillRect(legX, legY + 36, 12, 12);
+    ctx.strokeStyle = '#4e342e'; ctx.strokeRect(legX, legY + 36, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('23\'x23\' back slab — build anchor', legX + 18, legY + 46);
+    ctx.fillStyle = '#c5cae9'; ctx.fillRect(legX, legY + 54, 12, 12);
+    ctx.strokeStyle = '#283593'; ctx.strokeRect(legX, legY + 54, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('MIL Suite (drag)', legX + 18, legY + 64);
+    ctx.fillStyle = '#bbdefb'; ctx.fillRect(legX + 140, legY + 54, 12, 12);
+    ctx.strokeStyle = '#1565c0'; ctx.strokeRect(legX + 140, legY + 54, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('Garage (drag)', legX + 158, legY + 64);
+    ctx.fillStyle = '#c62828'; ctx.fillText('--- 25\' front setback', legX, legY + 80);
+    ctx.fillStyle = '#7b1fa2'; ctx.fillText('--- 5\' side setbacks', legX + 160, legY + 80);
+    ctx.fillStyle = '#e65100'; ctx.fillText('--- 18\' utility easement', legX + 310, legY + 80);
 
     // Info panel
-    const totalFP = buildings.house.w * buildings.house.h + buildings.carport.w * buildings.carport.h + buildings.slab.w * buildings.slab.h + buildings.mil.w * buildings.mil.h + buildings.garage.w * buildings.garage.h;
+    const totalFP = buildings.house.w * buildings.house.h + buildings.porch.w * buildings.porch.h + buildings.carport.w * buildings.carport.h + buildings.slab.w * buildings.slab.h + buildings.mil.w * buildings.mil.h + buildings.garage.w * buildings.garage.h;
     document.getElementById('piUsed').textContent = totalFP.toLocaleString() + ' sqft';
     const buildableW = lotW - 5 - 5;
     const buildableH = lotH - 25 - 18;
@@ -1796,8 +1804,8 @@ calcROI();
   window.toggleDims = function(btn) { showDimLabels = !showDimLabels; btn.classList.toggle('active'); draw(); };
   window.toggleSnap = function(btn) { snapToGrid = !snapToGrid; btn.classList.toggle('active'); };
   window.resetBuildings = function() {
-    buildings.mil.x = 78; buildings.mil.y = 83;
-    buildings.garage.x = 78; buildings.garage.y = 108;
+    buildings.mil.x = 80; buildings.mil.y = 88;
+    buildings.garage.x = 80; buildings.garage.y = 113;
     draw();
   };
 
