@@ -734,6 +734,7 @@
         <div class="sep"></div>
         <button class="tbtn" onclick="resetBuildings()">Reset Positions</button>
         <button class="tbtn" onclick="toggleSnap(this)">Snap to Grid</button>
+        <button class="tbtn" id="saveLayoutBtn" onclick="saveLayout()" style="background:#1a6b3a;color:white;border-color:#1a6b3a;">💾 Save Layout</button>
         <div class="sep"></div>
         <span style="font-size:11px; color:var(--text-muted);">Scale: 1 grid square = 10ft</span>
       </div>
@@ -1837,6 +1838,34 @@ calcROI();
   window.toggleEasements = function(btn) { showEasements = !showEasements; btn.classList.toggle('active'); draw(); };
   window.toggleDims = function(btn) { showDimLabels = !showDimLabels; btn.classList.toggle('active'); draw(); };
   window.toggleSnap = function(btn) { snapToGrid = !snapToGrid; btn.classList.toggle('active'); };
+  window.saveLayout = function() {
+    const saved = {};
+    for (const key in buildings) {
+      saved[key] = { x: buildings[key].x, y: buildings[key].y, w: buildings[key].w, h: buildings[key].h };
+    }
+    localStorage.setItem('stevensLayout', JSON.stringify(saved));
+    const btn = document.getElementById('saveLayoutBtn');
+    btn.textContent = '✓ Saved';
+    setTimeout(() => { btn.textContent = '💾 Save Layout'; }, 1500);
+  };
+
+  // Auto-load saved layout on init
+  (function loadLayout() {
+    const raw = localStorage.getItem('stevensLayout');
+    if (!raw) return;
+    try {
+      const saved = JSON.parse(raw);
+      for (const key in saved) {
+        if (buildings[key]) {
+          buildings[key].x = saved[key].x;
+          buildings[key].y = saved[key].y;
+          buildings[key].w = saved[key].w;
+          buildings[key].h = saved[key].h;
+        }
+      }
+    } catch(e) {}
+  })();
+
   window.resetBuildings = function() {
     buildings.mil.x = 60; buildings.mil.y = 108;
     buildings.garage.x = 16; buildings.garage.y = 100;
