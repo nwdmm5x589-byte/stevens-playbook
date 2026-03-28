@@ -763,9 +763,14 @@
       <div class="card-grid">
         <div>
           <div class="input-group">
+            <label>Carport Width (ft)</label>
+            <input type="range" min="18" max="30" step="1" value="24" id="carW" oninput="updateBuildingSize()">
+            <span id="carWOut" style="font-size:13px;">24'</span>
+          </div>
+          <div class="input-group">
             <label>MIL Suite Width (ft)</label>
             <input type="range" min="16" max="30" step="1" value="25" id="milW" oninput="updateBuildingSize()">
-            <span id="milWOut" style="font-size:13px;">20'</span>
+            <span id="milWOut" style="font-size:13px;">25'</span>
           </div>
           <div class="input-group">
             <label>MIL Suite Depth (ft)</label>
@@ -783,6 +788,11 @@
             <label>Garage Depth (ft)</label>
             <input type="range" min="20" max="35" step="1" value="30" id="garD" oninput="updateBuildingSize()">
             <span id="garDOut" style="font-size:13px;">30'</span>
+          </div>
+          <div class="input-group">
+            <label>Pavilion Size (ft)</label>
+            <input type="range" min="12" max="30" step="1" value="20" id="pavW" oninput="updateBuildingSize()">
+            <span id="pavWOut" style="font-size:13px;">20'</span>
           </div>
         </div>
       </div>
@@ -1387,10 +1397,13 @@ calcROI();
     // Front at y=32 (32' from north property line / ~62' from Stevens Lane centerline).
     house:    { x: 34, y: 62, w: 48, h: 38, color: '#ddd8cc', stroke: '#0d2d4a', label: 'House', sub: '47.8\'x37.9\' · 1,746 sqft', locked: false },
     porch:    { x: 36, y: 52, w: 14, h: 10, color: 'rgba(200,190,175,0.5)', stroke: '#8d6e63', label: 'Porch', sub: 'covered · open', locked: false },
-    carport:  { x: 16, y: 62, w: 18, h: 38, color: 'rgba(200,190,175,0.5)', stroke: '#5d4037', label: 'Carport', sub: '18\'×38\' · 2 boats/cars · attached left', locked: false },
-    slab:     { x: 80, y: 113, w: 23, h: 23, color: '#d5cfc5', stroke: '#4e342e', label: '23\'x23\' Slab', sub: 'build from here', locked: false },
+    carport:  { x: 16, y: 62, w: 24, h: 38, color: 'rgba(200,190,175,0.5)', stroke: '#5d4037', label: 'Carport', sub: '24\'×38\' · 2 boats/cars', locked: false },
     mil:      { x: 60, y: 108, w: 25, h: 25, color: '#c5cae9', stroke: '#283593', label: 'MIL Suite', sub: '625 sqft', locked: false },
     garage:   { x: 16, y: 100, w: 24, h: 30, color: '#bbdefb', stroke: '#1565c0', label: 'Garage', sub: '720 sqft', locked: false },
+    shrubs:   { x: 58, y: 100, w: 30, h: 5, color: 'rgba(60,140,60,0.35)', stroke: '#2e7d32', label: 'Fence / Shrubs', sub: '', locked: false },
+    deck:     { x: 60, y: 133, w: 20, h: 10, color: '#d7cba0', stroke: '#795548', label: 'Deck', sub: '', locked: false },
+    pavilion: { x: 75, y: 108, w: 20, h: 20, color: 'rgba(255,235,180,0.6)', stroke: '#f57f17', label: 'Pavilion', sub: '', locked: false },
+    pool:     { x: 88, y: 118, w: 16, h: 12, color: 'rgba(100,180,255,0.5)', stroke: '#0277bd', label: 'Pool', sub: 'above-ground', locked: false },
   };
 
   let dragging = null, dragOffX = 0, dragOffY = 0;
@@ -1658,19 +1671,49 @@ calcROI();
     ctx.fillText('gate', ftX(93), ftY(24));
 
     // Draw buildings
-    for (const key of ['porch', 'carport', 'house', 'slab', 'garage', 'mil']) {
+    for (const key of ['porch', 'shrubs', 'deck', 'carport', 'house', 'garage', 'mil', 'pavilion', 'pool']) {
       const b = buildings[key];
       const bx = ftX(b.x), by = ftY(b.y);
       const bw = b.w * S, bh = b.h * S;
 
+      if (key === 'pool') {
+        // Draw as oval
+        ctx.save();
+        ctx.fillStyle = 'rgba(0,0,0,0.08)';
+        ctx.beginPath(); ctx.ellipse(bx + bw/2 + 2, by + bh/2 + 2, bw/2, bh/2, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = b.color;
+        ctx.beginPath(); ctx.ellipse(bx + bw/2, by + bh/2, bw/2, bh/2, 0, 0, Math.PI*2); ctx.fill();
+        ctx.setLineDash([4, 3]);
+        ctx.strokeStyle = b.stroke; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(bx + bw/2, by + bh/2, bw/2, bh/2, 0, 0, Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = b.stroke; ctx.font = 'bold 10px DM Sans, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(b.label, bx + bw/2, by + bh/2 + 4);
+        ctx.restore();
+        continue;
+      }
+      if (key === 'shrubs') {
+        // Draw as green hatched fence/shrub strip
+        ctx.fillStyle = b.color; ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeStyle = b.stroke; ctx.lineWidth = 1.5; ctx.setLineDash([3, 2]);
+        ctx.strokeRect(bx, by, bw, bh); ctx.setLineDash([]);
+        // Bush bumps
+        ctx.fillStyle = 'rgba(46,125,50,0.5)';
+        for (let i = 0; i < bw; i += 10) {
+          ctx.beginPath(); ctx.arc(bx + i + 5, by + bh/2, 5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.fillStyle = b.stroke; ctx.font = '8px DM Sans, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(b.label, bx + bw/2, by - 3);
+        continue;
+      }
+
       ctx.fillStyle = 'rgba(0,0,0,0.08)';
       ctx.fillRect(bx + 3, by + 3, bw, bh);
-
       ctx.fillStyle = b.color;
       ctx.fillRect(bx, by, bw, bh);
       ctx.strokeStyle = b.stroke;
-      ctx.lineWidth = b.locked ? 2 : 2.5;
-      if (!b.locked) ctx.setLineDash([6, 3]);
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([6, 3]);
       ctx.strokeRect(bx, by, bw, bh);
       ctx.setLineDash([]);
 
@@ -1678,68 +1721,23 @@ calcROI();
       ctx.font = 'bold 11px DM Sans, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(b.label, bx + bw / 2, by + bh / 2 - 4);
-      ctx.font = '10px DM Sans, sans-serif';
-      ctx.fillText(b.sub, bx + bw / 2, by + bh / 2 + 10);
-
+      if (b.sub) {
+        ctx.font = '10px DM Sans, sans-serif';
+        ctx.fillText(b.sub, bx + bw / 2, by + bh / 2 + 10);
+      }
       if (showDimLabels) {
         ctx.fillStyle = 'rgba(0,0,0,0.4)';
         ctx.font = '9px DM Mono, monospace';
         ctx.fillText(b.w + '\' x ' + b.h + '\'', bx + bw / 2, by + bh / 2 + 22);
       }
-
-      if (!b.locked) {
-        ctx.fillStyle = b.stroke;
-        ctx.globalAlpha = 0.3;
-        const cx = bx + bw / 2, cy = by + bh - 14;
-        ctx.beginPath(); ctx.moveTo(cx, cy - 6); ctx.lineTo(cx + 4, cy - 2); ctx.lineTo(cx - 4, cy - 2); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(cx, cy + 6); ctx.lineTo(cx + 4, cy + 2); ctx.lineTo(cx - 4, cy + 2); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(cx - 6, cy); ctx.lineTo(cx - 2, cy - 4); ctx.lineTo(cx - 2, cy + 4); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(cx + 6, cy); ctx.lineTo(cx + 2, cy - 4); ctx.lineTo(cx + 2, cy + 4); ctx.fill();
-        ctx.globalAlpha = 1;
-      }
-    }
-
-    // Breezeway auto-connect
-    const house = buildings.house, mil = buildings.mil, garage = buildings.garage;
-
-    function drawBreezeway(from, to) {
-      const fromR = ftX(from.x + from.w);
-      const fromCY = ftY(from.y + from.h / 2);
-      const toL = ftX(to.x);
-      const toCY = ftY(to.y + to.h / 2);
-      const gap = toL - fromR;
-      if (gap > 0 && gap < 50 * S) {
-        const midY = (fromCY + toCY) / 2;
-        const brzH = 8 * S;
-        ctx.fillStyle = 'rgba(197,202,233,0.5)';
-        ctx.fillRect(fromR, midY - brzH / 2, gap, brzH);
-        ctx.setLineDash([4, 4]);
-        ctx.strokeStyle = '#283593';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(fromR, midY - brzH / 2, gap, brzH);
-        ctx.setLineDash([]);
-        ctx.fillStyle = '#283593';
-        ctx.font = '9px DM Sans, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Breezeway', fromR + gap / 2, midY + 3);
-        ctx.fillText(Math.round(gap / S) + '\'', fromR + gap / 2, midY + 14);
-      }
-    }
-
-    const milDist = Math.abs(mil.x - (house.x + house.w));
-    const garDist = Math.abs(garage.x - (house.x + house.w));
-    if (milDist <= garDist) drawBreezeway(house, mil);
-    else drawBreezeway(house, garage);
-
-    // Connect MIL to garage if stacked vertically
-    const milBot = ftY(mil.y + mil.h), garTop = ftY(garage.y);
-    if (Math.abs(mil.x - garage.x) < 10 && garTop - milBot > 0 && garTop - milBot < 15 * S) {
-      ctx.setLineDash([3, 3]);
-      ctx.strokeStyle = '#1565c0';
-      ctx.lineWidth = 1;
-      const cx = ftX(Math.max(mil.x, garage.x) + Math.min(mil.w, garage.w) / 2);
-      ctx.beginPath(); ctx.moveTo(cx, milBot); ctx.lineTo(cx, garTop); ctx.stroke();
-      ctx.setLineDash([]);
+      // Drag handle
+      ctx.fillStyle = b.stroke; ctx.globalAlpha = 0.3;
+      const dcx = bx + bw/2, dcy = by + bh - 14;
+      ctx.beginPath(); ctx.moveTo(dcx, dcy-6); ctx.lineTo(dcx+4, dcy-2); ctx.lineTo(dcx-4, dcy-2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(dcx, dcy+6); ctx.lineTo(dcx+4, dcy+2); ctx.lineTo(dcx-4, dcy+2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(dcx-6, dcy); ctx.lineTo(dcx-2, dcy-4); ctx.lineTo(dcx-2, dcy+4); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(dcx+6, dcy); ctx.lineTo(dcx+2, dcy-4); ctx.lineTo(dcx+2, dcy+4); ctx.fill();
+      ctx.globalAlpha = 1;
     }
 
     // Compass
@@ -1759,25 +1757,31 @@ calcROI();
     const legX = 15, legY = H - 100;
     ctx.fillStyle = '#ddd8cc'; ctx.fillRect(legX, legY, 12, 12);
     ctx.strokeStyle = '#0d2d4a'; ctx.lineWidth = 1; ctx.strokeRect(legX, legY, 12, 12);
-    ctx.fillStyle = '#333'; ctx.fillText('House 47.8\'x37.9\' (drag)', legX + 18, legY + 10);
-    ctx.fillStyle = 'rgba(200,190,175,0.7)'; ctx.fillRect(legX, legY + 18, 12, 12);
-    ctx.strokeStyle = '#5d4037'; ctx.strokeRect(legX, legY + 18, 12, 12);
-    ctx.fillStyle = '#333'; ctx.fillText('Porch / Carport (drag)', legX + 18, legY + 28);
-    ctx.fillStyle = '#d5cfc5'; ctx.fillRect(legX, legY + 36, 12, 12);
-    ctx.strokeStyle = '#4e342e'; ctx.strokeRect(legX, legY + 36, 12, 12);
-    ctx.fillStyle = '#333'; ctx.fillText('23\'x23\' back slab — build anchor', legX + 18, legY + 46);
-    ctx.fillStyle = '#c5cae9'; ctx.fillRect(legX, legY + 54, 12, 12);
-    ctx.strokeStyle = '#283593'; ctx.strokeRect(legX, legY + 54, 12, 12);
-    ctx.fillStyle = '#333'; ctx.fillText('MIL Suite (drag)', legX + 18, legY + 64);
-    ctx.fillStyle = '#bbdefb'; ctx.fillRect(legX + 140, legY + 54, 12, 12);
-    ctx.strokeStyle = '#1565c0'; ctx.strokeRect(legX + 140, legY + 54, 12, 12);
-    ctx.fillStyle = '#333'; ctx.fillText('Garage (drag)', legX + 158, legY + 64);
+    ctx.fillStyle = '#333'; ctx.fillText('House / Carport / Porch', legX + 18, legY + 10);
+    ctx.fillStyle = '#c5cae9'; ctx.fillRect(legX, legY + 18, 12, 12);
+    ctx.strokeStyle = '#283593'; ctx.strokeRect(legX, legY + 18, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('MIL Suite', legX + 18, legY + 28);
+    ctx.fillStyle = '#bbdefb'; ctx.fillRect(legX + 120, legY + 18, 12, 12);
+    ctx.strokeStyle = '#1565c0'; ctx.strokeRect(legX + 120, legY + 18, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('Garage', legX + 138, legY + 28);
+    ctx.fillStyle = 'rgba(255,235,180,0.9)'; ctx.fillRect(legX, legY + 36, 12, 12);
+    ctx.strokeStyle = '#f57f17'; ctx.strokeRect(legX, legY + 36, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('Pavilion', legX + 18, legY + 46);
+    ctx.fillStyle = '#d7cba0'; ctx.fillRect(legX + 120, legY + 36, 12, 12);
+    ctx.strokeStyle = '#795548'; ctx.strokeRect(legX + 120, legY + 36, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('Deck', legX + 138, legY + 46);
+    ctx.fillStyle = 'rgba(100,180,255,0.7)'; ctx.fillRect(legX, legY + 54, 12, 12);
+    ctx.strokeStyle = '#0277bd'; ctx.strokeRect(legX, legY + 54, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('Pool', legX + 18, legY + 64);
+    ctx.fillStyle = 'rgba(60,140,60,0.5)'; ctx.fillRect(legX + 120, legY + 54, 12, 12);
+    ctx.strokeStyle = '#2e7d32'; ctx.strokeRect(legX + 120, legY + 54, 12, 12);
+    ctx.fillStyle = '#333'; ctx.fillText('Fence / Shrubs', legX + 138, legY + 64);
     ctx.fillStyle = '#c62828'; ctx.fillText('--- 25\' front setback', legX, legY + 80);
     ctx.fillStyle = '#7b1fa2'; ctx.fillText('--- 5\' side setbacks', legX + 160, legY + 80);
     ctx.fillStyle = '#e65100'; ctx.fillText('--- 18\' utility easement', legX + 310, legY + 80);
 
     // Info panel
-    const totalFP = buildings.house.w * buildings.house.h + buildings.porch.w * buildings.porch.h + buildings.carport.w * buildings.carport.h + buildings.slab.w * buildings.slab.h + buildings.mil.w * buildings.mil.h + buildings.garage.w * buildings.garage.h;
+    const totalFP = buildings.house.w * buildings.house.h + buildings.porch.w * buildings.porch.h + buildings.carport.w * buildings.carport.h + buildings.mil.w * buildings.mil.h + buildings.garage.w * buildings.garage.h + buildings.pavilion.w * buildings.pavilion.h + buildings.deck.w * buildings.deck.h;
     document.getElementById('piUsed').textContent = totalFP.toLocaleString() + ' sqft';
     const buildableW = lotW - 5 - 5;
     const buildableH = lotH - 25 - 18;
@@ -1794,10 +1798,17 @@ calcROI();
   }
 
   function hitTest(mx, my) {
-    for (const key of ['mil', 'garage']) {
+    const order = ['pool', 'pavilion', 'mil', 'garage', 'shrubs', 'deck', 'house', 'carport', 'porch'];
+    for (const key of order) {
       const b = buildings[key];
-      const bx = ftX(b.x), by = ftY(b.y), bw = b.w * S, bh = b.h * S;
-      if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) return key;
+      if (key === 'pool') {
+        const cx = ftX(b.x + b.w/2), cy = ftY(b.y + b.h/2);
+        const rx = b.w/2*S, ry = b.h/2*S;
+        if (((mx-cx)/rx)**2 + ((my-cy)/ry)**2 <= 1) return key;
+      } else {
+        const bx = ftX(b.x), by = ftY(b.y), bw = b.w * S, bh = b.h * S;
+        if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) return key;
+      }
     }
     return null;
   }
@@ -1843,7 +1854,7 @@ calcROI();
     for (const key in buildings) {
       saved[key] = { x: buildings[key].x, y: buildings[key].y, w: buildings[key].w, h: buildings[key].h };
     }
-    localStorage.setItem('stevensLayout', JSON.stringify(saved));
+    localStorage.setItem('stevens382Layout_v2', JSON.stringify(saved));
     const btn = document.getElementById('saveLayoutBtn');
     btn.textContent = '✓ Saved';
     setTimeout(() => { btn.textContent = '💾 Save Layout'; }, 1500);
@@ -1851,7 +1862,7 @@ calcROI();
 
   // Auto-load saved layout on init
   (function loadLayout() {
-    const raw = localStorage.getItem('stevensLayout');
+    const raw = localStorage.getItem('stevens382Layout_v2');
     if (!raw) return;
     try {
       const saved = JSON.parse(raw);
@@ -1869,22 +1880,30 @@ calcROI();
   window.resetBuildings = function() {
     buildings.mil.x = 60; buildings.mil.y = 108;
     buildings.garage.x = 16; buildings.garage.y = 100;
+    buildings.pavilion.x = 75; buildings.pavilion.y = 108;
+    buildings.deck.x = 60; buildings.deck.y = 133;
+    buildings.pool.x = 88; buildings.pool.y = 118;
+    buildings.shrubs.x = 58; buildings.shrubs.y = 100;
     draw();
   };
 
   window.updateBuildingSize = function() {
+    const cw = +document.getElementById('carW').value;
     const mw = +document.getElementById('milW').value;
     const md = +document.getElementById('milD').value;
     const gw = +document.getElementById('garW').value;
     const gd = +document.getElementById('garD').value;
-    buildings.mil.w = mw; buildings.mil.h = md;
-    buildings.mil.sub = (mw * md) + ' sqft';
-    buildings.garage.w = gw; buildings.garage.h = gd;
-    buildings.garage.sub = (gw * gd) + ' sqft';
+    const pw = +document.getElementById('pavW').value;
+    buildings.carport.w = cw; buildings.carport.sub = cw + '\'×' + buildings.carport.h + '\' · 2 boats/cars';
+    buildings.mil.w = mw; buildings.mil.h = md; buildings.mil.sub = (mw * md) + ' sqft';
+    buildings.garage.w = gw; buildings.garage.h = gd; buildings.garage.sub = (gw * gd) + ' sqft';
+    buildings.pavilion.w = pw; buildings.pavilion.h = pw;
+    document.getElementById('carWOut').textContent = cw + '\'';
     document.getElementById('milWOut').textContent = mw + '\'';
     document.getElementById('milDOut').textContent = md + '\'';
     document.getElementById('garWOut').textContent = gw + '\'';
     document.getElementById('garDOut').textContent = gd + '\'';
+    document.getElementById('pavWOut').textContent = pw + '\'';
     document.getElementById('pdMil').textContent = mw + '\' x ' + md + '\' (' + (mw * md) + ' sqft)';
     document.getElementById('pdGar').textContent = gw + '\' x ' + gd + '\' (' + (gw * gd) + ' sqft)';
     draw();
