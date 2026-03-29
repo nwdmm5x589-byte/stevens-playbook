@@ -2019,24 +2019,51 @@ calcROI();
 
   const FIX_PAL = [
     { section:'Electrical' },
-    { type:'light',      label:'Ceiling Light', szFt:1.5 },
-    { type:'fan',        label:'Ceiling Fan',   szFt:2.2 },
-    { type:'outlet',     label:'Outlet',        szFt:1.0 },
-    { type:'switch',     label:'Switch',        szFt:1.0 },
+    { type:'light',        label:'Ceiling Light',    szFt:1.5 },
+    { type:'recessed',     label:'Recessed Light',   szFt:1.0 },
+    { type:'fan',          label:'Ceiling Fan',      szFt:2.2 },
+    { type:'outlet',       label:'Outlet',           szFt:1.0 },
+    { type:'gfci',         label:'GFCI Outlet',      szFt:1.0 },
+    { type:'switch',       label:'Switch',           szFt:1.0 },
+    { type:'dimmer',       label:'Dimmer Switch',    szFt:1.0 },
+    { type:'smoke',        label:'Smoke Detector',   szFt:0.9 },
+    { type:'panel',        label:'Breaker Panel',    szFt:2.0 },
+    { type:'meter',        label:'Elec. Meter',      szFt:1.5 },
     { section:'Plumbing' },
-    { type:'sink',       label:'Sink',          szFt:2.0 },
-    { type:'toilet',     label:'Toilet',        szFt:2.5 },
-    { type:'shower',     label:'Shower',        szFt:3.0 },
-    { type:'bathtub',    label:'Bathtub',       szFt:2.5 },
+    { type:'sink',         label:'Sink',             szFt:2.0 },
+    { type:'doublesink',   label:'Double Sink',      szFt:3.0 },
+    { type:'toilet',       label:'Toilet',           szFt:2.5 },
+    { type:'shower',       label:'Shower',           szFt:3.0 },
+    { type:'bathtub',      label:'Bathtub',          szFt:2.5 },
+    { type:'utilitysink',  label:'Utility Sink',     szFt:2.0 },
+    { type:'waterheater',  label:'Water Heater',     szFt:2.0 },
+    { type:'floordrain',   label:'Floor Drain',      szFt:1.0 },
     { section:'Appliances' },
-    { type:'stove',      label:'Stove / Range', szFt:2.5 },
-    { type:'fridge',     label:'Refrigerator',  szFt:2.5 },
-    { type:'dishwasher', label:'Dishwasher',    szFt:2.0 },
+    { type:'stove',        label:'Stove / Range',    szFt:2.5 },
+    { type:'hood',         label:'Range Hood',       szFt:2.5 },
+    { type:'microwave',    label:'Microwave',        szFt:2.0 },
+    { type:'fridge',       label:'Refrigerator',     szFt:2.5 },
+    { type:'dishwasher',   label:'Dishwasher',       szFt:2.0 },
+    { type:'washer',       label:'Washer',           szFt:2.5 },
+    { type:'dryer',        label:'Dryer',            szFt:2.5 },
+    { section:'HVAC' },
+    { type:'furnace',      label:'Furnace',          szFt:2.5 },
+    { type:'ac',           label:'AC Unit',          szFt:3.0 },
+    { type:'thermostat',   label:'Thermostat',       szFt:0.7 },
+    { type:'vent',         label:'Supply Vent',      szFt:1.5 },
+    { type:'returnvent',   label:'Return Vent',      szFt:2.0 },
+    { section:'Garage' },
+    { type:'garagedoor',   label:"Garage Door (9')", szFt:9.0 },
+    { type:'garagedoor2',  label:"Garage Door (16')",szFt:16.0},
+    { type:'garageopener', label:'Door Opener',      szFt:1.0 },
+    { type:'workbench',    label:'Workbench',        szFt:3.0 },
     { section:'Other' },
-    { type:'door',       label:'Door',          szFt:3.0 },
-    { type:'window',     label:'Window',        szFt:3.0 },
-    { type:'vent',       label:'HVAC Vent',     szFt:1.5 },
-    { type:'tv',         label:'TV',            szFt:3.0 },
+    { type:'stairs',       label:'Stairs',           szFt:4.0 },
+    { type:'fireplace',    label:'Fireplace',        szFt:4.0 },
+    { type:'door',         label:'Door',             szFt:3.0 },
+    { type:'window',       label:'Window',           szFt:3.0 },
+    { type:'tv',           label:'TV',               szFt:3.0 },
+    { type:'camera',       label:'Security Camera',  szFt:1.0 },
   ];
 
   const PRESETS = {
@@ -2088,8 +2115,14 @@ calcROI();
     canvas.width=BW*IS; canvas.height=BH*IS;
   }
   function fixSzPx(type) {
-    const t={light:1.5,fan:2.2,outlet:1.0,switch:1.0,sink:2.0,toilet:2.5,shower:3.0,
-             bathtub:2.5,stove:2.5,fridge:2.5,dishwasher:2.0,door:3.0,window:3.0,vent:1.5,tv:3.0};
+    const t={
+      light:1.5,recessed:1.0,fan:2.2,outlet:1.0,gfci:1.0,switch:1.0,dimmer:1.0,smoke:0.9,panel:2.0,meter:1.5,
+      sink:2.0,doublesink:3.0,toilet:2.5,shower:3.0,bathtub:2.5,utilitysink:2.0,waterheater:2.0,floordrain:1.0,
+      stove:2.5,hood:2.5,microwave:2.0,fridge:2.5,dishwasher:2.0,washer:2.5,dryer:2.5,
+      furnace:2.5,ac:3.0,thermostat:0.7,vent:1.5,returnvent:2.0,
+      garagedoor:9.0,garagedoor2:16.0,garageopener:1.0,workbench:3.0,
+      stairs:4.0,fireplace:4.0,door:3.0,window:3.0,tv:3.0,camera:1.0
+    };
     return (t[type]||2)*IS;
   }
   function hPos(r) {
@@ -2201,6 +2234,150 @@ calcROI();
         c.beginPath();c.moveTo(r*.2,r*.52);c.lineTo(r*.2,r*.8);c.stroke();
         c.beginPath();c.moveTo(r*.8,r*.52);c.lineTo(r*.8,r*.8);c.stroke();
         c.beginPath();c.moveTo(-r*.1,r*.8);c.lineTo(r*1.1,r*.8);c.stroke();
+        break;
+      // ── New fixtures ──────────────────────────────────────────
+      case 'recessed':
+        c.setLineDash([px*.08,px*.07]);
+        c.beginPath();c.arc(0,0,r*.82,0,Math.PI*2);c.stroke();
+        c.setLineDash([]);
+        c.beginPath();c.arc(0,0,r*.18,0,Math.PI*2);c.fill();
+        break;
+      case 'gfci':
+        c.strokeRect(-r*.6,-r*.72,r*1.2,r*1.44);
+        c.fillRect(-r*.22,-r*.35,r*.13,r*.42);c.fillRect(r*.09,-r*.35,r*.13,r*.42);
+        c.beginPath();c.arc(0,r*.15,r*.11,Math.PI,Math.PI*2);c.stroke();
+        c.fillRect(-r*.42,r*.38,r*.32,r*.2);c.fillRect(r*.1,r*.38,r*.32,r*.2);
+        break;
+      case 'dimmer':
+        c.strokeRect(-r*.5,-r*.72,r,r*1.44);
+        c.beginPath();c.moveTo(-r*.35,-r*.48);c.lineTo(r*.35,r*.48);c.stroke();
+        c.beginPath();c.arc(0,0,r*.16,0,Math.PI*2);c.fill();
+        break;
+      case 'smoke':
+        c.beginPath();c.arc(0,0,r*.82,0,Math.PI*2);c.stroke();
+        c.beginPath();c.arc(0,0,r*.38,0,Math.PI*2);c.fill();
+        for(let i=0;i<3;i++){const a=i*Math.PI*2/3;c.beginPath();c.arc(0,0,r*.62,a,a+Math.PI/3.8);c.stroke();}
+        break;
+      case 'panel':
+        c.strokeRect(-r*.55,-r*.9,r*1.1,r*1.8);
+        c.beginPath();c.moveTo(0,-r*.9);c.lineTo(0,r*.9);c.stroke();
+        for(let i=0;i<6;i++){const y=-r*.72+i*r*.28;c.beginPath();c.moveTo(-r*.48,y);c.lineTo(-r*.06,y);c.stroke();c.beginPath();c.moveTo(r*.06,y);c.lineTo(r*.48,y);c.stroke();}
+        break;
+      case 'meter':
+        c.beginPath();c.arc(0,0,r*.82,0,Math.PI*2);c.stroke();
+        for(let i=0;i<7;i++){const a=Math.PI+i*Math.PI/6;c.beginPath();c.moveTo(Math.cos(a)*r*.54,Math.sin(a)*r*.54);c.lineTo(Math.cos(a)*r*.78,Math.sin(a)*r*.78);c.stroke();}
+        c.beginPath();c.moveTo(0,0);c.lineTo(r*.44,-r*.36);c.stroke();
+        c.beginPath();c.arc(0,0,r*.1,0,Math.PI*2);c.fill();
+        break;
+      case 'doublesink':
+        c.strokeRect(-r,-r*.65,r*2,r*1.3);
+        c.beginPath();c.moveTo(0,-r*.65);c.lineTo(0,r*.65);c.stroke();
+        c.beginPath();c.ellipse(-r*.5,r*.08,r*.34,r*.42,0,0,Math.PI*2);c.stroke();
+        c.beginPath();c.arc(-r*.5,r*.08,r*.09,0,Math.PI*2);c.fill();
+        c.beginPath();c.ellipse(r*.5,r*.08,r*.34,r*.42,0,0,Math.PI*2);c.stroke();
+        c.beginPath();c.arc(r*.5,r*.08,r*.09,0,Math.PI*2);c.fill();
+        break;
+      case 'utilitysink':
+        c.strokeRect(-r*.88,-r*.88,r*1.76,r*1.76);
+        c.beginPath();c.ellipse(0,r*.08,r*.55,r*.6,0,0,Math.PI*2);c.stroke();
+        c.beginPath();c.arc(0,r*.08,r*.12,0,Math.PI*2);c.fill();
+        c.fillRect(-r*.1,-r*.88,r*.2,r*.4);
+        break;
+      case 'waterheater':
+        c.strokeRect(-r*.5,-r*.82,r,r*1.64);
+        c.beginPath();c.arc(0,-r*.82,r*.5,Math.PI,0);c.stroke();
+        c.beginPath();c.arc(0,r*.82,r*.5,0,Math.PI);c.stroke();
+        c.beginPath();c.moveTo(-r*.5,0);c.lineTo(r*.5,0);c.stroke();
+        c.beginPath();c.moveTo(-r*.22,-r*.82);c.lineTo(-r*.22,-r*1.12);c.stroke();
+        c.beginPath();c.moveTo(r*.22,-r*.82);c.lineTo(r*.22,-r*1.12);c.stroke();
+        break;
+      case 'floordrain':
+        c.beginPath();c.arc(0,0,r*.82,0,Math.PI*2);c.stroke();
+        c.beginPath();c.moveTo(-r*.65,0);c.lineTo(r*.65,0);c.moveTo(0,-r*.65);c.lineTo(0,r*.65);c.moveTo(-r*.46,-r*.46);c.lineTo(r*.46,r*.46);c.moveTo(r*.46,-r*.46);c.lineTo(-r*.46,r*.46);c.stroke();
+        break;
+      case 'hood':
+        c.beginPath();c.moveTo(-r*.9,-r*.42);c.lineTo(r*.9,-r*.42);c.lineTo(r*.55,r*.42);c.lineTo(-r*.55,r*.42);c.closePath();c.stroke();
+        c.beginPath();c.moveTo(-r*.68,-r*.1);c.lineTo(r*.68,-r*.1);c.moveTo(-r*.68,r*.12);c.lineTo(r*.68,r*.12);c.stroke();
+        c.beginPath();c.arc(0,r*.28,r*.14,0,Math.PI*2);c.stroke();
+        break;
+      case 'microwave':
+        c.strokeRect(-r*.85,-r*.5,r*1.7,r);
+        c.beginPath();c.moveTo(r*.2,-r*.5);c.lineTo(r*.2,r*.5);c.stroke();
+        c.lineWidth=Math.max(2,px/8);c.beginPath();c.moveTo(r*.18,-r*.42);c.lineTo(r*.18,r*.42);c.stroke();
+        c.lineWidth=Math.max(1,px/14);
+        c.beginPath();c.arc(r*.58,0,r*.16,0,Math.PI*2);c.stroke();
+        break;
+      case 'washer':
+        c.strokeRect(-r,-r,r*2,r*2);
+        c.beginPath();c.arc(0,r*.1,r*.62,0,Math.PI*2);c.stroke();
+        c.beginPath();c.arc(0,r*.1,r*.22,0,Math.PI*2);c.fill();
+        c.beginPath();c.moveTo(-r,-r*.58);c.lineTo(r,-r*.58);c.stroke();
+        break;
+      case 'dryer':
+        c.strokeRect(-r,-r,r*2,r*2);
+        c.beginPath();c.arc(0,r*.1,r*.62,0,Math.PI*2);c.stroke();
+        c.fillRect(-r*.45,-r*.95,r*.35,r*.25);
+        c.beginPath();c.arc(r*.65,-r*.72,r*.13,0,Math.PI*2);c.stroke();
+        break;
+      case 'furnace':
+        c.strokeRect(-r*.75,-r*.75,r*1.5,r*1.5);
+        [-r*.32,0,r*.32].forEach(bx=>{c.beginPath();c.moveTo(bx,r*.42);c.bezierCurveTo(bx-r*.14,-r*.05,bx+r*.14,-r*.05,bx,-r*.48);c.stroke();});
+        break;
+      case 'ac':
+        c.strokeRect(-r,-r*.55,r*2,r*1.1);
+        for(let i=0;i<4;i++){c.beginPath();c.moveTo(-r*.84,-r*.32+i*r*.22);c.lineTo(r*.84,-r*.32+i*r*.22);c.stroke();}
+        c.beginPath();c.arc(r*.6,0,r*.2,0,Math.PI*2);c.stroke();
+        break;
+      case 'thermostat':
+        c.beginPath();c.arc(0,0,r*.82,0,Math.PI*2);c.stroke();
+        c.beginPath();c.arc(0,0,r*.42,0,Math.PI*2);c.stroke();
+        c.beginPath();c.arc(r*.14,-r*.3,r*.16,0,Math.PI*2);c.stroke();
+        break;
+      case 'returnvent':
+        c.strokeRect(-r,-r*.55,r*2,r*1.1);
+        for(let i=0;i<4;i++){c.beginPath();c.moveTo(-r*.82,-r*.32+i*r*.22);c.lineTo(r*.82,-r*.32+i*r*.22);c.stroke();}
+        c.beginPath();c.moveTo(-r*.3,r*.08);c.lineTo(r*.3,r*.08);c.moveTo(r*.1,-r*.14);c.lineTo(r*.3,r*.08);c.lineTo(r*.1,r*.3);c.stroke();
+        break;
+      case 'garagedoor':
+        c.strokeRect(-r,-r*.42,r*2,r*.84);
+        for(let i=1;i<4;i++){c.beginPath();c.moveTo(-r,-r*.42+i*r*.28);c.lineTo(r,-r*.42+i*r*.28);c.stroke();}
+        c.beginPath();c.moveTo(-r,-r*.42);c.lineTo(-r,-r*.72);c.moveTo(r,-r*.42);c.lineTo(r,-r*.72);c.stroke();
+        break;
+      case 'garagedoor2':
+        c.strokeRect(-r,-r*.42,r*2,r*.84);
+        c.beginPath();c.moveTo(0,-r*.42);c.lineTo(0,r*.42);c.stroke();
+        for(let i=1;i<4;i++){c.beginPath();c.moveTo(-r,-r*.42+i*r*.28);c.lineTo(r,-r*.42+i*r*.28);c.stroke();}
+        c.beginPath();c.moveTo(-r,-r*.42);c.lineTo(-r,-r*.72);c.moveTo(r,-r*.42);c.lineTo(r,-r*.72);c.stroke();
+        break;
+      case 'garageopener':
+        c.strokeRect(-r*.55,-r*.82,r*1.1,r*1.64);
+        c.beginPath();c.arc(0,-r*.18,r*.28,0,Math.PI*2);c.fill();
+        for(let i=1;i<=2;i++){c.beginPath();c.arc(0,r*.55,r*.18*i,-Math.PI*.8,-Math.PI*.2);c.stroke();}
+        break;
+      case 'workbench':
+        c.fillStyle='rgba(120,90,50,0.18)';c.fillRect(-r,-r*.12,r*2,r*.52);
+        c.strokeRect(-r,-r*.12,r*2,r*.52);
+        c.beginPath();c.moveTo(-r*.72,r*.4);c.lineTo(-r*.72,r);c.moveTo(r*.72,r*.4);c.lineTo(r*.72,r);c.stroke();
+        c.beginPath();c.moveTo(-r,-r*.12);c.lineTo(-r,r);c.stroke();
+        c.beginPath();c.moveTo(-r*.72,r*.7);c.lineTo(r*.72,r*.7);c.stroke();
+        break;
+      case 'stairs':
+        c.strokeRect(-r,-r,r*2,r*2);
+        for(let i=0;i<5;i++){const s=r*2/5;c.beginPath();c.moveTo(-r+i*s,-r+i*s+s);c.lineTo(-r+i*s+s,-r+i*s+s);c.lineTo(-r+i*s+s,-r+i*s+s*2);c.stroke();}
+        c.beginPath();c.moveTo(-r*.55,-r*.55);c.lineTo(r*.55,r*.55);c.stroke();
+        c.beginPath();c.moveTo(r*.3,r*.55);c.lineTo(r*.55,r*.55);c.lineTo(r*.55,r*.3);c.stroke();
+        break;
+      case 'fireplace':
+        c.strokeRect(-r,-r*.58,r*2,r*1.16);
+        c.fillStyle='rgba(60,20,0,0.22)';c.fillRect(-r*.66,-r*.38,r*1.32,r*.9);
+        c.strokeRect(-r*.66,-r*.38,r*1.32,r*.9);
+        c.beginPath();c.moveTo(0,r*.52);c.bezierCurveTo(-r*.38,r*.1,-r*.22,-r*.2,0,-r*.38);c.bezierCurveTo(r*.22,-r*.2,r*.38,r*.1,0,r*.52);c.stroke();
+        break;
+      case 'camera':
+        c.strokeRect(-r*.18,-r*.32,r*.6,r*.64);
+        c.beginPath();c.arc(-r*.5,0,r*.28,0,Math.PI*2);c.stroke();
+        c.beginPath();c.moveTo(r*.42,0);c.lineTo(r*.9,0);c.stroke();
+        c.beginPath();c.arc(r*.9,0,r*.14,0,Math.PI*2);c.fill();
         break;
     }
     c.restore();
