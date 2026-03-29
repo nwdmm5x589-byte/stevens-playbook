@@ -2128,6 +2128,29 @@ calcROI();
   let rooms = [], selectedIdx = null;
   let bKey = null, BW = 0, BH = 0, IS = 12;
   let drag = null, dragOX = 0, dragOY = 0;
+  let resizing = null; // { idx, handle, fixedR, fixedB }
+  const HS = 7; // handle hit-radius px
+  const HNAMES   = ['nw','n','ne','e','se','s','sw','w'];
+  const HCURSORS = { nw:'nw-resize', n:'n-resize', ne:'ne-resize', e:'e-resize',
+                     se:'se-resize', s:'s-resize', sw:'sw-resize', w:'w-resize' };
+
+  function handlePositions(r) {
+    const rx = r.x*IS, ry = r.y*IS, rw = r.w*IS, rh = r.h*IS;
+    return {
+      nw:{x:rx,       y:ry},       n:{x:rx+rw/2, y:ry},
+      ne:{x:rx+rw,    y:ry},       e:{x:rx+rw,   y:ry+rh/2},
+      se:{x:rx+rw,    y:ry+rh},    s:{x:rx+rw/2, y:ry+rh},
+      sw:{x:rx,       y:ry+rh},    w:{x:rx,       y:ry+rh/2},
+    };
+  }
+  function hitHandle(mx, my, r) {
+    const pos = handlePositions(r);
+    for (const h of HNAMES) {
+      const p = pos[h];
+      if (Math.abs(mx - p.x) <= HS && Math.abs(my - p.y) <= HS) return h;
+    }
+    return null;
+  }
 
   function computeScale() {
     const maxW = Math.min(window.innerWidth  - 240, 720);
@@ -2170,6 +2193,19 @@ calcROI();
       }
     });
 
+    // Resize handles for selected room
+    if (selectedIdx !== null && rooms[selectedIdx]) {
+      const pos = handlePositions(rooms[selectedIdx]);
+      for (const h of HNAMES) {
+        const { x, y } = pos[h];
+        ctx.fillStyle = 'white';
+        ctx.strokeStyle = '#e53935';
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(x - HS/2, y - HS/2, HS, HS);
+        ctx.strokeRect(x - HS/2, y - HS/2, HS, HS);
+      }
+    }
+
     // Exterior walls
     ctx.strokeStyle = '#0d2d4a'; ctx.lineWidth = 5;
     ctx.strokeRect(2.5, 2.5, CW - 5, CH - 5);
@@ -2211,20 +2247,62 @@ calcROI();
   }
 
   canvas.addEventListener('mousedown', e => {
-    const p = getPos(e), idx = hitRoom(p.x, p.y);
+    const p = getPos(e);
+    // Check resize handles first (only when a room is selected)
+    if (selectedIdx !== null && rooms[selectedIdx]) {
+      const h = hitHandle(p.x, p.y, rooms[selectedIdx]);
+      if (h) {
+        const r = rooms[selectedIdx];
+        resizing = { idx: selectedIdx, handle: h, fixedR: r.x + r.w, fixedB: r.y + r.h };
+        return;
+      }
+    }
+    const idx = hitRoom(p.x, p.y);
     selectedIdx = idx >= 0 ? idx : null;
     drag = idx >= 0 ? idx : null;
     if (drag !== null) { dragOX = p.x - rooms[drag].x*IS; dragOY = p.y - rooms[drag].y*IS; }
     updateSidebar(); draw();
   });
   canvas.addEventListener('mousemove', e => {
-    if (drag === null) return;
-    const p = getPos(e), r = rooms[drag];
-    r.x = Math.max(0, Math.min(BW - r.w, (p.x - dragOX) / IS));
-    r.y = Math.max(0, Math.min(BH - r.h, (p.y - dragOY) / IS));
-    draw();
+    const p = getPos(e);
+
+    if (resizing !== null) {
+      const r = rooms[resizing.idx];
+      const mx = p.x / IS, my = p.y / IS;
+      const h = resizing.handle, MIN = 4;
+      if (h==='e'||h==='ne'||h==='se') r.w = Math.max(MIN, Math.round(mx - r.x));
+      if (h==='s'||h==='sw'||h==='se') r.h = Math.max(MIN, Math.round(my - r.y));
+      if (h==='w'||h==='nw'||h==='sw') {
+        const nx = Math.min(Math.round(mx), resizing.fixedR - MIN);
+        r.w = resizing.fixedR - nx; r.x = nx;
+      }
+      if (h==='n'||h==='nw'||h==='ne') {
+        const ny = Math.min(Math.round(my), resizing.fixedB - MIN);
+        r.h = resizing.fixedB - ny; r.y = ny;
+      }
+      // Clamp within building
+      r.x = Math.max(0, r.x); r.y = Math.max(0, r.y);
+      r.w = Math.min(r.w, BW - r.x); r.h = Math.min(r.h, BH - r.y);
+      updateSidebar(); draw();
+      return;
+    }
+
+    if (drag !== null) {
+      const r = rooms[drag];
+      r.x = Math.max(0, Math.min(BW - r.w, (p.x - dragOX) / IS));
+      r.y = Math.max(0, Math.min(BH - r.h, (p.y - dragOY) / IS));
+      draw();
+      return;
+    }
+
+    // Cursor management
+    if (selectedIdx !== null && rooms[selectedIdx]) {
+      const h = hitHandle(p.x, p.y, rooms[selectedIdx]);
+      if (h) { canvas.style.cursor = HCURSORS[h]; return; }
+    }
+    canvas.style.cursor = hitRoom(p.x, p.y) >= 0 ? 'grab' : 'default';
   });
-  canvas.addEventListener('mouseup', () => { drag = null; });
+  canvas.addEventListener('mouseup', () => { drag = null; resizing = null; });
   canvas.addEventListener('contextmenu', e => {
     e.preventDefault();
     const p = getPos(e), idx = hitRoom(p.x, p.y);
