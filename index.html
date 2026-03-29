@@ -296,6 +296,14 @@
   font-family: inherit; margin-top: 6px;
 }
 .im-del-btn:hover { background: #fff5f5; }
+.im-tab-btn {
+  flex: 1; padding: 5px 0; font-size: 11.5px; border: 1px solid #ddd;
+  background: white; cursor: pointer; font-family: inherit; color: #555;
+}
+.im-tab-btn:first-child { border-radius: 5px 0 0 5px; }
+.im-tab-btn:last-child  { border-radius: 0 5px 5px 0; }
+.im-tab-btn.active { background: #0d2d4a; color: white; border-color: #0d2d4a; }
+.im-chip.active { background: #e8f5e9; border-color: #2e7d32; color: #1b5e20; }
 .im-hint {
   padding: 7px 16px;
   background: #f0f7ff;
@@ -1939,6 +1947,7 @@ calcROI();
     const pos = getMousePos(e), b = buildings[dragging];
     let nx = (pos.x - dragOffX - lot.x) / S, ny = (pos.y - dragOffY - lot.y) / S;
     if (snapToGrid) { nx = Math.round(nx / 5) * 5; ny = Math.round(ny / 5) * 5; }
+    else { nx = Math.round(nx); ny = Math.round(ny); } // always 1ft snap
     b.x = Math.max(0, Math.min(lotW - b.w, nx));
     b.y = Math.max(0, Math.min(lotH - b.h, ny));
     draw();
@@ -2043,6 +2052,7 @@ calcROI();
         <div class="im-dims"  id="imDims"></div>
       </div>
       <div style="display:flex;gap:6px;align-items:center;">
+        <button class="tbtn" onclick="exportFloorPlanPDF()" style="font-size:12px;">📄 Export PDF</button>
         <button class="tbtn" onclick="resetInterior()" style="font-size:12px;">↺ Reset</button>
         <button class="tbtn" id="saveInteriorBtn" onclick="saveInterior()" style="background:#1a6b3a;color:white;border-color:#1a6b3a;font-size:12px;">💾 Save</button>
         <button class="im-close" onclick="closeInterior()">✕</button>
@@ -2053,337 +2063,511 @@ calcROI();
         <canvas id="interiorCanvas"></canvas>
       </div>
       <div class="im-sidebar">
-        <div class="im-sidebar-lbl">Add Room</div>
-        <div id="imPalette"></div>
-        <div style="margin-top:12px;">
+        <div style="display:flex;gap:3px;margin-bottom:9px;">
+          <button id="imTabRooms" onclick="setInteriorTab('rooms')" class="im-tab-btn active">Rooms</button>
+          <button id="imTabFix"   onclick="setInteriorTab('fixtures')" class="im-tab-btn">Fixtures</button>
+        </div>
+        <div id="imRoomSide">
+          <div class="im-sidebar-lbl">Add Room</div>
+          <div id="imPalette"></div>
+        </div>
+        <div id="imFixSide" style="display:none;">
+          <div id="imFixPalette"></div>
+        </div>
+        <div style="margin-top:12px;border-top:1px solid #eee;padding-top:10px;">
           <div class="im-sidebar-lbl">Selected</div>
           <div id="imSelInfo" class="im-sel-info">—</div>
-          <button id="imDelBtn" class="im-del-btn" onclick="deleteRoom()" style="display:none;">🗑 Remove</button>
+          <button id="imDelBtn" class="im-del-btn" onclick="deleteSelected()" style="display:none;">🗑 Remove</button>
         </div>
       </div>
     </div>
-    <div class="im-hint">Click room to select &nbsp;·&nbsp; Drag to move &nbsp;·&nbsp; Right-click to delete &nbsp;·&nbsp; Click palette to add rooms &nbsp;·&nbsp; Esc to close</div>
+    <div class="im-hint">Rooms: click to select · drag to move · resize handles · right-click to delete &nbsp;|&nbsp; Fixtures: click type then click canvas to place · Esc to cancel</div>
   </div>
 </div>
 
 <script>
-// ── Interior Planner ──────────────────────────────────────────
+// ── Interior Planner (v2: fixtures + PDF) ─────────────────────
 ;(function() {
   const modal  = document.getElementById('interiorModal');
   const canvas = document.getElementById('interiorCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  // Room palette catalog
-  const PALETTE = [
-    { label: 'Bedroom',     w: 14, h: 12, color: '#c5cae9', stroke: '#283593' },
-    { label: 'Master Bed',  w: 16, h: 14, color: '#ce93d8', stroke: '#6a1b9a' },
-    { label: 'Bathroom',    w:  9, h:  8, color: '#b2ebf2', stroke: '#00838f' },
-    { label: 'Living Rm',   w: 18, h: 14, color: '#c8e6c9', stroke: '#2e7d32' },
-    { label: 'Kitchen',     w: 14, h: 12, color: '#ffe0b2', stroke: '#e65100' },
-    { label: 'Dining',      w: 12, h: 10, color: '#fff9c4', stroke: '#f9a825' },
-    { label: 'Laundry',     w:  8, h:  8, color: '#f8bbd0', stroke: '#ad1457' },
-    { label: 'Office',      w: 12, h: 10, color: '#b3e5fc', stroke: '#0277bd' },
-    { label: 'Closet',      w:  6, h:  6, color: '#f5f5f5', stroke: '#757575' },
-    { label: 'Hallway',     w:  5, h: 14, color: '#eceff1', stroke: '#546e7a' },
-    { label: 'Mudroom',     w:  8, h:  8, color: '#d7cba0', stroke: '#5d4037' },
-    { label: 'Garage Bay',  w: 12, h: 22, color: '#bbdefb', stroke: '#1565c0' },
-    { label: 'Storage',     w: 10, h:  8, color: '#e0e0e0', stroke: '#424242' },
-    { label: 'Kitchenette', w: 12, h:  8, color: '#ffccbc', stroke: '#bf360c' },
-    { label: 'Utility',     w:  8, h:  6, color: '#dcedc8', stroke: '#558b2f' },
-    { label: 'Open Area',   w: 16, h: 12, color: 'rgba(200,220,200,0.4)', stroke: '#81c784' },
+  // ── Palettes ───────────────────────────────────────────────
+  const ROOM_PAL = [
+    { label:'Bedroom',     w:14,h:12,color:'#c5cae9',stroke:'#283593' },
+    { label:'Master Bed',  w:16,h:14,color:'#ce93d8',stroke:'#6a1b9a' },
+    { label:'Bathroom',    w: 9,h: 8,color:'#b2ebf2',stroke:'#00838f' },
+    { label:'Living Rm',   w:18,h:14,color:'#c8e6c9',stroke:'#2e7d32' },
+    { label:'Kitchen',     w:14,h:12,color:'#ffe0b2',stroke:'#e65100' },
+    { label:'Dining',      w:12,h:10,color:'#fff9c4',stroke:'#f9a825' },
+    { label:'Laundry',     w: 8,h: 8,color:'#f8bbd0',stroke:'#ad1457' },
+    { label:'Office',      w:12,h:10,color:'#b3e5fc',stroke:'#0277bd' },
+    { label:'Closet',      w: 6,h: 6,color:'#f5f5f5',stroke:'#757575' },
+    { label:'Hallway',     w: 5,h:14,color:'#eceff1',stroke:'#546e7a' },
+    { label:'Mudroom',     w: 8,h: 8,color:'#d7cba0',stroke:'#5d4037' },
+    { label:'Garage Bay',  w:12,h:22,color:'#bbdefb',stroke:'#1565c0' },
+    { label:'Storage',     w:10,h: 8,color:'#e0e0e0',stroke:'#424242' },
+    { label:'Kitchenette', w:12,h: 8,color:'#ffccbc',stroke:'#bf360c' },
+    { label:'Utility',     w: 8,h: 6,color:'#dcedc8',stroke:'#558b2f' },
+    { label:'Open Area',   w:16,h:12,color:'rgba(200,220,200,0.4)',stroke:'#81c784' },
   ];
 
-  // Default layouts per building
+  const FIX_PAL = [
+    { section:'Electrical' },
+    { type:'light',      label:'Ceiling Light', szFt:1.5 },
+    { type:'fan',        label:'Ceiling Fan',   szFt:2.2 },
+    { type:'outlet',     label:'Outlet',        szFt:1.0 },
+    { type:'switch',     label:'Switch',        szFt:1.0 },
+    { section:'Plumbing' },
+    { type:'sink',       label:'Sink',          szFt:2.0 },
+    { type:'toilet',     label:'Toilet',        szFt:2.5 },
+    { type:'shower',     label:'Shower',        szFt:3.0 },
+    { type:'bathtub',    label:'Bathtub',       szFt:2.5 },
+    { section:'Appliances' },
+    { type:'stove',      label:'Stove / Range', szFt:2.5 },
+    { type:'fridge',     label:'Refrigerator',  szFt:2.5 },
+    { type:'dishwasher', label:'Dishwasher',    szFt:2.0 },
+    { section:'Other' },
+    { type:'door',       label:'Door',          szFt:3.0 },
+    { type:'window',     label:'Window',        szFt:3.0 },
+    { type:'vent',       label:'HVAC Vent',     szFt:1.5 },
+    { type:'tv',         label:'TV',            szFt:3.0 },
+  ];
+
   const PRESETS = {
     house: [
-      { label: 'Entry',       w: 10, h:  8, x:  0, y:  0, color: '#eceff1', stroke: '#546e7a' },
-      { label: 'Living Rm',   w: 20, h: 16, x: 10, y:  0, color: '#c8e6c9', stroke: '#2e7d32' },
-      { label: 'Kitchen',     w: 14, h: 14, x: 30, y:  0, color: '#ffe0b2', stroke: '#e65100' },
-      { label: 'Dining',      w: 14, h:  8, x:  0, y:  8, color: '#fff9c4', stroke: '#f9a825' },
-      { label: 'Laundry',     w:  6, h:  8, x: 44, y: 14, color: '#f8bbd0', stroke: '#ad1457' },
-      { label: 'Hallway',     w:  5, h: 16, x: 10, y: 16, color: '#eceff1', stroke: '#546e7a' },
-      { label: 'Master Bed',  w: 16, h: 16, x: 15, y: 16, color: '#ce93d8', stroke: '#6a1b9a' },
-      { label: 'Master Bath', w: 10, h: 10, x: 31, y: 16, color: '#b2ebf2', stroke: '#00838f' },
-      { label: 'Bed 2',       w: 13, h: 13, x:  0, y: 25, color: '#c5cae9', stroke: '#283593' },
-      { label: 'Bath 2',      w:  9, h:  8, x: 13, y: 30, color: '#b2ebf2', stroke: '#00838f' },
-      { label: 'Bed 3',       w: 13, h: 13, x: 31, y: 25, color: '#c5cae9', stroke: '#283593' },
+      { label:'Entry',       w:10,h: 8,x: 0,y: 0,color:'#eceff1',stroke:'#546e7a' },
+      { label:'Living Rm',   w:20,h:16,x:10,y: 0,color:'#c8e6c9',stroke:'#2e7d32' },
+      { label:'Kitchen',     w:14,h:14,x:30,y: 0,color:'#ffe0b2',stroke:'#e65100' },
+      { label:'Dining',      w:14,h: 8,x: 0,y: 8,color:'#fff9c4',stroke:'#f9a825' },
+      { label:'Laundry',     w: 6,h: 8,x:44,y:14,color:'#f8bbd0',stroke:'#ad1457' },
+      { label:'Hallway',     w: 5,h:16,x:10,y:16,color:'#eceff1',stroke:'#546e7a' },
+      { label:'Master Bed',  w:16,h:16,x:15,y:16,color:'#ce93d8',stroke:'#6a1b9a' },
+      { label:'Master Bath', w:10,h:10,x:31,y:16,color:'#b2ebf2',stroke:'#00838f' },
+      { label:'Bed 2',       w:13,h:13,x: 0,y:25,color:'#c5cae9',stroke:'#283593' },
+      { label:'Bath 2',      w: 9,h: 8,x:13,y:30,color:'#b2ebf2',stroke:'#00838f' },
+      { label:'Bed 3',       w:13,h:13,x:31,y:25,color:'#c5cae9',stroke:'#283593' },
     ],
     mil: [
-      { label: 'Bedroom',    w: 14, h: 13, x:  0, y:  0, color: '#c5cae9', stroke: '#283593' },
-      { label: 'Bathroom',   w: 11, h:  8, x: 14, y:  0, color: '#b2ebf2', stroke: '#00838f' },
-      { label: 'Closet',     w: 11, h:  5, x: 14, y:  8, color: '#f5f5f5', stroke: '#757575' },
-      { label: 'Living/Kit', w: 25, h: 12, x:  0, y: 13, color: '#c8e6c9', stroke: '#2e7d32' },
+      { label:'Bedroom',    w:14,h:13,x: 0,y: 0,color:'#c5cae9',stroke:'#283593' },
+      { label:'Bathroom',   w:11,h: 8,x:14,y: 0,color:'#b2ebf2',stroke:'#00838f' },
+      { label:'Closet',     w:11,h: 5,x:14,y: 8,color:'#f5f5f5',stroke:'#757575' },
+      { label:'Living/Kit', w:25,h:12,x: 0,y:13,color:'#c8e6c9',stroke:'#2e7d32' },
     ],
     garage: [
-      { label: 'Bay 1',      w: 12, h: 22, x:  0, y:  0, color: '#bbdefb', stroke: '#1565c0' },
-      { label: 'Bay 2',      w: 12, h: 22, x: 12, y:  0, color: '#bbdefb', stroke: '#1565c0' },
-      { label: 'Storage',    w: 16, h:  8, x:  0, y: 22, color: '#e0e0e0', stroke: '#424242' },
-      { label: 'Workbench',  w:  8, h:  8, x: 16, y: 22, color: '#ffecb3', stroke: '#f9a825' },
+      { label:'Bay 1',     w:12,h:22,x: 0,y: 0,color:'#bbdefb',stroke:'#1565c0' },
+      { label:'Bay 2',     w:12,h:22,x:12,y: 0,color:'#bbdefb',stroke:'#1565c0' },
+      { label:'Storage',   w:16,h: 8,x: 0,y:22,color:'#e0e0e0',stroke:'#424242' },
+      { label:'Workbench', w: 8,h: 8,x:16,y:22,color:'#ffecb3',stroke:'#f9a825' },
     ]
   };
+  const NAMES = { house:'House', mil:'MIL Suite', garage:'Garage' };
 
-  const NAMES = { house: 'House', mil: 'MIL Suite', garage: 'Garage' };
+  // ── State ──────────────────────────────────────────────────
+  let rooms=[], fixtures=[], selectedIdx=null, selectedFixIdx=null;
+  let bKey=null, BW=0, BH=0, IS=12;
+  let drag=null, dragOX=0, dragOY=0;
+  let dragFix=null, dragFOX=0, dragFOY=0;
+  let resizing=null;
+  let activeTab='rooms', pendingFix=null;
 
-  let rooms = [], selectedIdx = null;
-  let bKey = null, BW = 0, BH = 0, IS = 12;
-  let drag = null, dragOX = 0, dragOY = 0;
-  let resizing = null; // { idx, handle, fixedR, fixedB }
-  const HS = 7; // handle hit-radius px
-  const HNAMES   = ['nw','n','ne','e','se','s','sw','w'];
-  const HCURSORS = { nw:'nw-resize', n:'n-resize', ne:'ne-resize', e:'e-resize',
-                     se:'se-resize', s:'s-resize', sw:'sw-resize', w:'w-resize' };
+  const HS=7;
+  const HNAMES=['nw','n','ne','e','se','s','sw','w'];
+  const HCURSORS={nw:'nw-resize',n:'n-resize',ne:'ne-resize',e:'e-resize',
+                  se:'se-resize',s:'s-resize',sw:'sw-resize',w:'w-resize'};
 
-  function handlePositions(r) {
-    const rx = r.x*IS, ry = r.y*IS, rw = r.w*IS, rh = r.h*IS;
-    return {
-      nw:{x:rx,       y:ry},       n:{x:rx+rw/2, y:ry},
-      ne:{x:rx+rw,    y:ry},       e:{x:rx+rw,   y:ry+rh/2},
-      se:{x:rx+rw,    y:ry+rh},    s:{x:rx+rw/2, y:ry+rh},
-      sw:{x:rx,       y:ry+rh},    w:{x:rx,       y:ry+rh/2},
-    };
+  // ── Helpers ────────────────────────────────────────────────
+  function computeScale() {
+    const mW=Math.min(window.innerWidth-240,720), mH=Math.min(window.innerHeight-200,560);
+    IS=Math.max(8,Math.min(22,Math.min(Math.floor(mW/BW),Math.floor(mH/BH))));
+    canvas.width=BW*IS; canvas.height=BH*IS;
   }
-  function hitHandle(mx, my, r) {
-    const pos = handlePositions(r);
-    for (const h of HNAMES) {
-      const p = pos[h];
-      if (Math.abs(mx - p.x) <= HS && Math.abs(my - p.y) <= HS) return h;
-    }
+  function fixSzPx(type) {
+    const t={light:1.5,fan:2.2,outlet:1.0,switch:1.0,sink:2.0,toilet:2.5,shower:3.0,
+             bathtub:2.5,stove:2.5,fridge:2.5,dishwasher:2.0,door:3.0,window:3.0,vent:1.5,tv:3.0};
+    return (t[type]||2)*IS;
+  }
+  function hPos(r) {
+    const rx=r.x*IS,ry=r.y*IS,rw=r.w*IS,rh=r.h*IS;
+    return {nw:{x:rx,y:ry},n:{x:rx+rw/2,y:ry},ne:{x:rx+rw,y:ry},e:{x:rx+rw,y:ry+rh/2},
+            se:{x:rx+rw,y:ry+rh},s:{x:rx+rw/2,y:ry+rh},sw:{x:rx,y:ry+rh},w:{x:rx,y:ry+rh/2}};
+  }
+  function hitHandle(mx,my,r) {
+    const p=hPos(r);
+    for(const h of HNAMES) if(Math.abs(mx-p[h].x)<=HS&&Math.abs(my-p[h].y)<=HS) return h;
     return null;
   }
-
-  function computeScale() {
-    const maxW = Math.min(window.innerWidth  - 240, 720);
-    const maxH = Math.min(window.innerHeight - 200, 560);
-    IS = Math.min(Math.floor(maxW / BW), Math.floor(maxH / BH));
-    IS = Math.max(8, Math.min(IS, 22));
-    canvas.width  = BW * IS;
-    canvas.height = BH * IS;
-  }
-
-  function draw() {
-    const CW = canvas.width, CH = canvas.height;
-    ctx.clearRect(0, 0, CW, CH);
-    ctx.fillStyle = '#f9f6ef';
-    ctx.fillRect(0, 0, CW, CH);
-
-    // 1ft grid
-    ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 0.5;
-    for (let x = 0; x <= CW; x += IS) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CH); ctx.stroke(); }
-    for (let y = 0; y <= CH; y += IS) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CW,y); ctx.stroke(); }
-
-    // Rooms
-    rooms.forEach((r, i) => {
-      const rx = r.x*IS, ry = r.y*IS, rw = r.w*IS, rh = r.h*IS;
-      ctx.fillStyle = r.color;
-      ctx.fillRect(rx, ry, rw, rh);
-      ctx.strokeStyle = i === selectedIdx ? '#e53935' : (r.stroke || 'rgba(0,0,0,0.25)');
-      ctx.lineWidth   = i === selectedIdx ? 2.5 : 1.5;
-      ctx.strokeRect(rx + 0.75, ry + 0.75, rw - 1.5, rh - 1.5);
-      const fs = Math.min(12, Math.max(7, rw / (r.label.length * 0.65)));
-      ctx.fillStyle = 'rgba(0,0,0,0.68)';
-      ctx.font = 'bold ' + fs + 'px DM Sans, sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const cy = ry + rh/2 + (rh > IS*3 ? -(fs*0.5) : 0);
-      ctx.fillText(r.label, rx + rw/2, cy);
-      if (rh > IS*2.5) {
-        ctx.font = '9px DM Mono, monospace';
-        ctx.fillStyle = 'rgba(0,0,0,0.38)';
-        ctx.fillText(r.w + "' \u00d7 " + r.h + "'", rx + rw/2, cy + fs + 2);
-      }
-    });
-
-    // Resize handles for selected room
-    if (selectedIdx !== null && rooms[selectedIdx]) {
-      const pos = handlePositions(rooms[selectedIdx]);
-      for (const h of HNAMES) {
-        const { x, y } = pos[h];
-        ctx.fillStyle = 'white';
-        ctx.strokeStyle = '#e53935';
-        ctx.lineWidth = 1.5;
-        ctx.fillRect(x - HS/2, y - HS/2, HS, HS);
-        ctx.strokeRect(x - HS/2, y - HS/2, HS, HS);
-      }
-    }
-
-    // Exterior walls
-    ctx.strokeStyle = '#0d2d4a'; ctx.lineWidth = 5;
-    ctx.strokeRect(2.5, 2.5, CW - 5, CH - 5);
-
-    // Rulers
-    ctx.fillStyle = 'rgba(0,0,0,0.28)';
-    ctx.font = '8px DM Mono, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    const step = IS >= 14 ? 5 : 10;
-    for (let ft = 0; ft <= BW; ft += step) {
-      const px = ft * IS;
-      ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 0.5;
-      ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, 5); ctx.stroke();
-      if (ft % 10 === 0 || step === 5) ctx.fillText(ft + "'", px, 14);
-    }
-    ctx.textAlign = 'right';
-    for (let ft = 0; ft <= BH; ft += step) {
-      const py = ft * IS;
-      ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 0.5;
-      ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(5, py); ctx.stroke();
-      if (ft % 10 === 0 || step === 5) ctx.fillText(ft + "'", 22, py + 3);
-    }
-    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  }
-
-  function hitRoom(mx, my) {
-    for (let i = rooms.length - 1; i >= 0; i--) {
-      const r = rooms[i];
-      if (mx >= r.x*IS && mx <= (r.x+r.w)*IS && my >= r.y*IS && my <= (r.y+r.h)*IS) return i;
+  function hitRoom(mx,my) {
+    for(let i=rooms.length-1;i>=0;i--){
+      const r=rooms[i];
+      if(mx>=r.x*IS&&mx<=(r.x+r.w)*IS&&my>=r.y*IS&&my<=(r.y+r.h)*IS) return i;
     }
     return -1;
   }
-
+  function hitFix(mx,my) {
+    for(let i=fixtures.length-1;i>=0;i--){
+      const f=fixtures[i],sz=fixSzPx(f.type)/2;
+      if(Math.abs(mx-f.x*IS)<=sz&&Math.abs(my-f.y*IS)<=sz) return i;
+    }
+    return -1;
+  }
   function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const sx = canvas.width / rect.width, sy = canvas.height / rect.height;
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: (cx - rect.left)*sx, y: (cy - rect.top)*sy };
+    const rect=canvas.getBoundingClientRect(),sx=canvas.width/rect.width,sy=canvas.height/rect.height;
+    const cx=e.touches?e.touches[0].clientX:e.clientX,cy=e.touches?e.touches[0].clientY:e.clientY;
+    return {x:(cx-rect.left)*sx,y:(cy-rect.top)*sy};
   }
 
-  canvas.addEventListener('mousedown', e => {
-    const p = getPos(e);
-    // Check resize handles first (only when a room is selected)
-    if (selectedIdx !== null && rooms[selectedIdx]) {
-      const h = hitHandle(p.x, p.y, rooms[selectedIdx]);
-      if (h) {
-        const r = rooms[selectedIdx];
-        resizing = { idx: selectedIdx, handle: h, fixedR: r.x + r.w, fixedB: r.y + r.h };
-        return;
-      }
+  // ── Fixture symbols ────────────────────────────────────────
+  function drawSym(c,type,cx,cy,px) {
+    const r=px/2;
+    c.save(); c.translate(cx,cy);
+    c.strokeStyle='#222'; c.fillStyle='#222';
+    c.lineWidth=Math.max(1,px/14); c.lineCap='round'; c.lineJoin='round';
+    switch(type) {
+      case 'light':
+        c.beginPath();c.arc(0,0,r*.82,0,Math.PI*2);c.stroke();
+        c.beginPath();c.moveTo(-r,0);c.lineTo(r,0);c.moveTo(0,-r);c.lineTo(0,r);c.stroke();
+        break;
+      case 'fan':
+        c.beginPath();c.arc(0,0,r*.22,0,Math.PI*2);c.fill();
+        for(let i=0;i<4;i++){c.save();c.rotate(i*Math.PI/2);c.beginPath();c.ellipse(r*.5,0,r*.42,r*.18,0,0,Math.PI*2);c.stroke();c.restore();}
+        break;
+      case 'outlet':
+        c.strokeRect(-r*.6,-r*.65,r*1.2,r*1.3);
+        c.fillRect(-r*.22,-r*.28,r*.13,r*.42);c.fillRect(r*.09,-r*.28,r*.13,r*.42);
+        c.beginPath();c.arc(0,r*.22,r*.11,Math.PI,Math.PI*2);c.stroke();
+        break;
+      case 'switch':
+        c.strokeRect(-r*.5,-r*.72,r,r*1.44);c.fillRect(-r*.28,-r*.42,r*.56,r*.62);
+        break;
+      case 'sink':
+        c.strokeRect(-r,-r,r*2,r*2);
+        c.beginPath();c.ellipse(0,r*.08,r*.52,r*.6,0,0,Math.PI*2);c.stroke();
+        c.beginPath();c.arc(0,r*.08,r*.1,0,Math.PI*2);c.fill();
+        c.fillRect(-r*.08,-r,r*.16,r*.4);
+        break;
+      case 'toilet':
+        c.strokeRect(-r*.42,-r,r*.84,r*.52);
+        c.beginPath();c.ellipse(0,r*.2,r*.5,r*.68,0,0,Math.PI*2);c.stroke();
+        break;
+      case 'shower':
+        c.strokeRect(-r,-r,r*2,r*2);
+        c.beginPath();c.arc(0,0,r*.15,0,Math.PI*2);c.fill();
+        for(let a=0;a<8;a++){c.save();c.rotate(a*Math.PI/4);c.beginPath();c.moveTo(r*.22,0);c.lineTo(r*.45,0);c.stroke();c.restore();}
+        break;
+      case 'bathtub':
+        c.strokeRect(-r,-r*.48,r*2,r*.96);c.strokeRect(-r*.82,-r*.32,r*1.5,r*.64);
+        c.beginPath();c.arc(r*.52,0,r*.12,0,Math.PI*2);c.stroke();
+        break;
+      case 'stove':
+        c.strokeRect(-r,-r,r*2,r*2);
+        [[-r*.5,-r*.5],[r*.5,-r*.5],[-r*.5,r*.5],[r*.5,r*.5]].forEach(([bx,by])=>{
+          c.beginPath();c.arc(bx,by,r*.3,0,Math.PI*2);c.stroke();
+          c.beginPath();c.arc(bx,by,r*.1,0,Math.PI*2);c.fill();
+        });
+        break;
+      case 'fridge':
+        c.strokeRect(-r*.62,-r,r*1.24,r*2);
+        c.beginPath();c.moveTo(-r*.62,r*.1);c.lineTo(r*.62,r*.1);c.stroke();
+        c.beginPath();c.moveTo(-r*.42,-r*.5);c.lineTo(-r*.42,r*.05);c.stroke();
+        c.beginPath();c.moveTo(-r*.42,r*.55);c.lineTo(-r*.42,r*.9);c.stroke();
+        break;
+      case 'dishwasher':
+        c.strokeRect(-r,-r*.65,r*2,r*1.3);
+        c.font='bold '+(px*.28)+'px DM Mono,monospace';
+        c.textAlign='center';c.textBaseline='middle';c.fillText('DW',r,0);
+        break;
+      case 'vent':
+        c.strokeRect(-r*.9,-r*.4,r*1.8,r*.8);
+        for(let i=0;i<5;i++){const vx=-r*.62+i*r*.31;c.beginPath();c.moveTo(vx,-r*.4);c.lineTo(vx,r*.4);c.stroke();}
+        break;
+      case 'door':
+        c.strokeRect(-r*.07,-r*.07,r*.14,r*1.1);
+        c.beginPath();c.arc(-r*.07,r,r,Math.PI*1.5,0);c.stroke();
+        break;
+      case 'window':
+        c.lineWidth=Math.max(2,px/10);c.strokeRect(-r,-r*.1,r*2,r*.2);
+        c.lineWidth=Math.max(.5,px/20);
+        c.beginPath();c.moveTo(-r,-r*.02);c.lineTo(r,-r*.02);c.stroke();
+        c.beginPath();c.moveTo(-r,r*.02);c.lineTo(r,r*.02);c.stroke();
+        break;
+      case 'tv':
+        c.strokeRect(-r,-r*.52,r*2,r*1.04);
+        c.beginPath();c.moveTo(r*.2,r*.52);c.lineTo(r*.2,r*.8);c.stroke();
+        c.beginPath();c.moveTo(r*.8,r*.52);c.lineTo(r*.8,r*.8);c.stroke();
+        c.beginPath();c.moveTo(-r*.1,r*.8);c.lineTo(r*1.1,r*.8);c.stroke();
+        break;
     }
-    const idx = hitRoom(p.x, p.y);
-    selectedIdx = idx >= 0 ? idx : null;
-    drag = idx >= 0 ? idx : null;
-    if (drag !== null) { dragOX = p.x - rooms[drag].x*IS; dragOY = p.y - rooms[drag].y*IS; }
-    updateSidebar(); draw();
-  });
-  canvas.addEventListener('mousemove', e => {
-    const p = getPos(e);
-
-    if (resizing !== null) {
-      const r = rooms[resizing.idx];
-      const mx = p.x / IS, my = p.y / IS;
-      const h = resizing.handle, MIN = 4;
-      if (h==='e'||h==='ne'||h==='se') r.w = Math.max(MIN, Math.round(mx - r.x));
-      if (h==='s'||h==='sw'||h==='se') r.h = Math.max(MIN, Math.round(my - r.y));
-      if (h==='w'||h==='nw'||h==='sw') {
-        const nx = Math.min(Math.round(mx), resizing.fixedR - MIN);
-        r.w = resizing.fixedR - nx; r.x = nx;
-      }
-      if (h==='n'||h==='nw'||h==='ne') {
-        const ny = Math.min(Math.round(my), resizing.fixedB - MIN);
-        r.h = resizing.fixedB - ny; r.y = ny;
-      }
-      // Clamp within building
-      r.x = Math.max(0, r.x); r.y = Math.max(0, r.y);
-      r.w = Math.min(r.w, BW - r.x); r.h = Math.min(r.h, BH - r.y);
-      updateSidebar(); draw();
-      return;
-    }
-
-    if (drag !== null) {
-      const r = rooms[drag];
-      r.x = Math.max(0, Math.min(BW - r.w, (p.x - dragOX) / IS));
-      r.y = Math.max(0, Math.min(BH - r.h, (p.y - dragOY) / IS));
-      draw();
-      return;
-    }
-
-    // Cursor management
-    if (selectedIdx !== null && rooms[selectedIdx]) {
-      const h = hitHandle(p.x, p.y, rooms[selectedIdx]);
-      if (h) { canvas.style.cursor = HCURSORS[h]; return; }
-    }
-    canvas.style.cursor = hitRoom(p.x, p.y) >= 0 ? 'grab' : 'default';
-  });
-  canvas.addEventListener('mouseup', () => { drag = null; resizing = null; });
-  canvas.addEventListener('contextmenu', e => {
-    e.preventDefault();
-    const p = getPos(e), idx = hitRoom(p.x, p.y);
-    if (idx >= 0) { rooms.splice(idx, 1); if (selectedIdx >= idx) selectedIdx = null; updateSidebar(); draw(); }
-  });
-
-  function updateSidebar() {
-    const info = document.getElementById('imSelInfo');
-    const del  = document.getElementById('imDelBtn');
-    if (selectedIdx !== null && rooms[selectedIdx]) {
-      const r = rooms[selectedIdx];
-      info.textContent = r.label + '\n' + r.w + "' \u00d7 " + r.h + "' (" + (r.w*r.h) + ' sqft)';
-      del.style.display = 'block';
-    } else {
-      info.textContent = '\u2014';
-      del.style.display = 'none';
-    }
+    c.restore();
   }
 
-  // Build palette buttons
-  (function() {
-    const wrap = document.getElementById('imPalette');
-    if (!wrap) return;
-    PALETTE.forEach(p => {
-      const btn = document.createElement('button');
-      btn.className = 'im-chip';
-      btn.innerHTML = '<span class="im-dot" style="background:' + p.color + ';border:1px solid ' + p.stroke + ';"></span>' + p.label;
-      btn.onclick = () => {
-        rooms.push(Object.assign({}, p, { x: 1, y: 1 }));
-        selectedIdx = rooms.length - 1;
-        updateSidebar(); draw();
+  // ── Render (shared for live canvas + PDF export) ───────────
+  function render(c,aBW,aBH,aIS,aRooms,aFixtures,isLive) {
+    const CW=aBW*aIS,CH=aBH*aIS;
+    c.clearRect(0,0,CW,CH);c.fillStyle='#f9f6ef';c.fillRect(0,0,CW,CH);
+
+    // Grid
+    c.strokeStyle='rgba(0,0,0,0.06)';c.lineWidth=.5;
+    for(let x=0;x<=CW;x+=aIS){c.beginPath();c.moveTo(x,0);c.lineTo(x,CH);c.stroke();}
+    for(let y=0;y<=CH;y+=aIS){c.beginPath();c.moveTo(0,y);c.lineTo(CW,y);c.stroke();}
+
+    // Rooms
+    aRooms.forEach((r,i)=>{
+      const rx=r.x*aIS,ry=r.y*aIS,rw=r.w*aIS,rh=r.h*aIS;
+      c.fillStyle=r.color;c.fillRect(rx,ry,rw,rh);
+      const sel=isLive&&i===selectedIdx;
+      c.strokeStyle=sel?'#e53935':(r.stroke||'rgba(0,0,0,0.25)');
+      c.lineWidth=sel?2.5:1.5;c.strokeRect(rx+.75,ry+.75,rw-1.5,rh-1.5);
+      const fs=Math.min(12,Math.max(7,rw/(r.label.length*.65)));
+      c.fillStyle='rgba(0,0,0,0.68)';c.font='bold '+fs+'px DM Sans,sans-serif';
+      c.textAlign='center';c.textBaseline='middle';
+      const cy=ry+rh/2+(rh>aIS*3?-(fs*.5):0);
+      c.fillText(r.label,rx+rw/2,cy);
+      if(rh>aIS*2.5){c.font='9px DM Mono,monospace';c.fillStyle='rgba(0,0,0,0.38)';c.fillText(r.w+"' \u00d7 "+r.h+"'",rx+rw/2,cy+fs+2);}
+    });
+
+    // Fixtures
+    aFixtures.forEach((f,i)=>{
+      const sz=fixSzPx(f.type),selF=isLive&&i===selectedFixIdx;
+      if(selF){c.strokeStyle='#e53935';c.lineWidth=1.5;c.setLineDash([3,2]);c.strokeRect(f.x*aIS-sz/2-3,f.y*aIS-sz/2-3,sz+6,sz+6);c.setLineDash([]);}
+      drawSym(c,f.type,f.x*aIS,f.y*aIS,sz);
+    });
+
+    // Resize handles (live only)
+    if(isLive&&selectedIdx!==null&&rooms[selectedIdx]){
+      const pos=hPos(rooms[selectedIdx]);
+      for(const h of HNAMES){const {x,y}=pos[h];c.fillStyle='white';c.strokeStyle='#e53935';c.lineWidth=1.5;c.fillRect(x-HS/2,y-HS/2,HS,HS);c.strokeRect(x-HS/2,y-HS/2,HS,HS);}
+    }
+
+    // Exterior walls
+    c.strokeStyle='#0d2d4a';c.lineWidth=5;c.strokeRect(2.5,2.5,CW-5,CH-5);
+
+    // Rulers (live only)
+    if(isLive){
+      c.fillStyle='rgba(0,0,0,0.28)';c.font='8px DM Mono,monospace';c.textAlign='center';c.textBaseline='alphabetic';
+      const step=aIS>=14?5:10;
+      for(let ft=0;ft<=aBW;ft+=step){const px=ft*aIS;c.strokeStyle='rgba(0,0,0,0.18)';c.lineWidth=.5;c.beginPath();c.moveTo(px,0);c.lineTo(px,5);c.stroke();if(ft%10===0||step===5)c.fillText(ft+"'",px,14);}
+      c.textAlign='right';
+      for(let ft=0;ft<=aBH;ft+=step){const py=ft*aIS;c.strokeStyle='rgba(0,0,0,0.18)';c.lineWidth=.5;c.beginPath();c.moveTo(0,py);c.lineTo(5,py);c.stroke();if(ft%10===0||step===5)c.fillText(ft+"'",22,py+3);}
+      c.textAlign='left';c.textBaseline='alphabetic';
+    }
+  }
+  function draw(){render(ctx,BW,BH,IS,rooms,fixtures,true);}
+
+  // ── Mouse events ───────────────────────────────────────────
+  canvas.addEventListener('mousedown',e=>{
+    const p=getPos(e);
+    if(activeTab==='fixtures'){
+      if(pendingFix){
+        fixtures.push({type:pendingFix,x:Math.round(p.x/IS*2)/2,y:Math.round(p.y/IS*2)/2});
+        draw();return;
+      }
+      const fi=hitFix(p.x,p.y);
+      selectedFixIdx=fi>=0?fi:null;
+      if(fi>=0){dragFix=fi;dragFOX=p.x-fixtures[fi].x*IS;dragFOY=p.y-fixtures[fi].y*IS;}
+      updateSidebar();draw();return;
+    }
+    if(selectedIdx!==null&&rooms[selectedIdx]){
+      const h=hitHandle(p.x,p.y,rooms[selectedIdx]);
+      if(h){const r=rooms[selectedIdx];resizing={idx:selectedIdx,handle:h,fixedR:r.x+r.w,fixedB:r.y+r.h};return;}
+    }
+    const idx=hitRoom(p.x,p.y);
+    selectedIdx=idx>=0?idx:null;drag=idx>=0?idx:null;
+    if(drag!==null){dragOX=p.x-rooms[drag].x*IS;dragOY=p.y-rooms[drag].y*IS;}
+    updateSidebar();draw();
+  });
+
+  canvas.addEventListener('mousemove',e=>{
+    const p=getPos(e);
+    if(dragFix!==null){
+      const f=fixtures[dragFix];
+      f.x=Math.max(0,Math.min(BW,Math.round((p.x-dragFOX)/IS*2)/2));
+      f.y=Math.max(0,Math.min(BH,Math.round((p.y-dragFOY)/IS*2)/2));
+      draw();return;
+    }
+    if(resizing!==null){
+      const r=rooms[resizing.idx],mx=p.x/IS,my=p.y/IS,h=resizing.handle,MIN=4;
+      if(h==='e'||h==='ne'||h==='se') r.w=Math.max(MIN,Math.round(mx-r.x));
+      if(h==='s'||h==='sw'||h==='se') r.h=Math.max(MIN,Math.round(my-r.y));
+      if(h==='w'||h==='nw'||h==='sw'){const nx=Math.min(Math.round(mx),resizing.fixedR-MIN);r.w=resizing.fixedR-nx;r.x=nx;}
+      if(h==='n'||h==='nw'||h==='ne'){const ny=Math.min(Math.round(my),resizing.fixedB-MIN);r.h=resizing.fixedB-ny;r.y=ny;}
+      r.x=Math.max(0,r.x);r.y=Math.max(0,r.y);r.w=Math.min(r.w,BW-r.x);r.h=Math.min(r.h,BH-r.y);
+      updateSidebar();draw();return;
+    }
+    if(drag!==null){
+      const r=rooms[drag];
+      r.x=Math.max(0,Math.min(BW-r.w,(p.x-dragOX)/IS));
+      r.y=Math.max(0,Math.min(BH-r.h,(p.y-dragOY)/IS));
+      draw();return;
+    }
+    if(activeTab==='rooms'&&selectedIdx!==null&&rooms[selectedIdx]){const h=hitHandle(p.x,p.y,rooms[selectedIdx]);if(h){canvas.style.cursor=HCURSORS[h];return;}}
+    if(activeTab==='fixtures'&&pendingFix){canvas.style.cursor='crosshair';return;}
+    const overFix=activeTab==='fixtures'&&hitFix(p.x,p.y)>=0;
+    const overRoom=activeTab==='rooms'&&hitRoom(p.x,p.y)>=0;
+    canvas.style.cursor=(overFix||overRoom)?'grab':'default';
+  });
+
+  canvas.addEventListener('mouseup',()=>{drag=null;dragFix=null;resizing=null;});
+  canvas.addEventListener('contextmenu',e=>{
+    e.preventDefault();const p=getPos(e);
+    if(activeTab==='fixtures'){const fi=hitFix(p.x,p.y);if(fi>=0){fixtures.splice(fi,1);if(selectedFixIdx>=fi)selectedFixIdx=null;updateSidebar();draw();}}
+    else{const idx=hitRoom(p.x,p.y);if(idx>=0){rooms.splice(idx,1);if(selectedIdx>=idx)selectedIdx=null;updateSidebar();draw();}}
+  });
+
+  // ── Sidebar ────────────────────────────────────────────────
+  function updateSidebar(){
+    const info=document.getElementById('imSelInfo'),del=document.getElementById('imDelBtn');
+    if(activeTab==='rooms'&&selectedIdx!==null&&rooms[selectedIdx]){
+      const r=rooms[selectedIdx];info.textContent=r.label+'\n'+r.w+"' \u00d7 "+r.h+"' ("+r.w*r.h+' sqft)';del.style.display='block';
+    }else if(activeTab==='fixtures'&&selectedFixIdx!==null&&fixtures[selectedFixIdx]){
+      const f=fixtures[selectedFixIdx],def=FIX_PAL.find(p=>p.type===f.type)||{};
+      info.textContent=(def.label||f.type)+'\n@ '+Math.round(f.x)+"', "+Math.round(f.y)+"'";del.style.display='block';
+    }else{info.textContent='\u2014';del.style.display='none';}
+  }
+
+  window.setInteriorTab=function(tab){
+    activeTab=tab;pendingFix=null;
+    document.getElementById('imTabRooms').classList.toggle('active',tab==='rooms');
+    document.getElementById('imTabFix').classList.toggle('active',tab==='fixtures');
+    document.getElementById('imRoomSide').style.display=tab==='rooms'?'':'none';
+    document.getElementById('imFixSide').style.display=tab==='fixtures'?'':'none';
+    if(tab==='rooms')selectedFixIdx=null;else selectedIdx=null;
+    canvas.style.cursor='default';
+    updateSidebar();draw();
+  };
+
+  // Build room palette
+  (function(){
+    const wrap=document.getElementById('imPalette');if(!wrap)return;
+    ROOM_PAL.forEach(p=>{
+      const btn=document.createElement('button');btn.className='im-chip';
+      btn.innerHTML='<span class="im-dot" style="background:'+p.color+';border:1px solid '+p.stroke+';"></span>'+p.label;
+      btn.onclick=()=>{rooms.push(Object.assign({},p,{x:1,y:1}));selectedIdx=rooms.length-1;updateSidebar();draw();};
+      wrap.appendChild(btn);
+    });
+  })();
+
+  // Build fixture palette
+  (function(){
+    const wrap=document.getElementById('imFixPalette');if(!wrap)return;
+    let firstSection=true;
+    FIX_PAL.forEach(p=>{
+      if(p.section){
+        const lbl=document.createElement('div');lbl.className='im-sidebar-lbl';
+        lbl.style.marginTop=firstSection?'0':'10px';lbl.textContent=p.section;
+        wrap.appendChild(lbl);firstSection=false;return;
+      }
+      const btn=document.createElement('button');btn.className='im-chip';btn.id='fx_'+p.type;
+      // Mini preview canvas
+      const mc=document.createElement('canvas');mc.width=16;mc.height=16;mc.style.flexShrink='0';
+      const mc2=mc.getContext('2d');mc2.strokeStyle='#333';mc2.fillStyle='#333';mc2.lineWidth=1;
+      drawSym(mc2,p.type,8,8,12);
+      btn.appendChild(mc);
+      const sp=document.createElement('span');sp.textContent=p.label;sp.style.fontSize='11px';
+      btn.appendChild(sp);
+      btn.onclick=()=>{
+        pendingFix=pendingFix===p.type?null:p.type;
+        canvas.style.cursor=pendingFix?'crosshair':'default';
+        document.querySelectorAll('[id^="fx_"]').forEach(b=>b.classList.remove('active'));
+        if(pendingFix)btn.classList.add('active');
       };
       wrap.appendChild(btn);
     });
   })();
 
-  window.deleteRoom = function() {
-    if (selectedIdx !== null) { rooms.splice(selectedIdx, 1); selectedIdx = null; updateSidebar(); draw(); }
+  window.deleteSelected=function(){
+    if(activeTab==='fixtures'&&selectedFixIdx!==null){fixtures.splice(selectedFixIdx,1);selectedFixIdx=null;}
+    else if(selectedIdx!==null){rooms.splice(selectedIdx,1);selectedIdx=null;}
+    updateSidebar();draw();
   };
+  // legacy alias
+  window.deleteRoom=window.deleteSelected;
 
-  window.openInterior = function(key, building) {
-    bKey = key;
-    BW = building ? building.w : { house:48, mil:25, garage:24 }[key];
-    BH = building ? building.h : { house:38, mil:25, garage:30 }[key];
+  // ── Open / Save / Reset ────────────────────────────────────
+  window.openInterior=function(key,building){
+    bKey=key;
+    BW=building?building.w:{house:48,mil:25,garage:24}[key];
+    BH=building?building.h:{house:38,mil:25,garage:30}[key];
     computeScale();
-    const saved = localStorage.getItem('interior_' + key);
-    rooms = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(PRESETS[key] || []));
-    selectedIdx = null;
-    document.getElementById('imTitle').textContent = (NAMES[key] || key) + ' \u2014 Interior Layout';
-    document.getElementById('imDims').textContent  = BW + "' \u00d7 " + BH + "'  \u00b7  " + (BW*BH).toLocaleString() + ' sqft';
-    modal.style.display = 'flex';
-    updateSidebar(); draw();
+    rooms=localStorage.getItem('interior_'+key)?JSON.parse(localStorage.getItem('interior_'+key)):JSON.parse(JSON.stringify(PRESETS[key]||[]));
+    fixtures=localStorage.getItem('fixtures_'+key)?JSON.parse(localStorage.getItem('fixtures_'+key)):[];
+    selectedIdx=null;selectedFixIdx=null;pendingFix=null;activeTab='rooms';
+    window.setInteriorTab('rooms');
+    document.getElementById('imTitle').textContent=(NAMES[key]||key)+' \u2014 Interior Layout';
+    document.getElementById('imDims').textContent=BW+"' \u00d7 "+BH+"'  \u00b7  "+(BW*BH).toLocaleString()+' sqft';
+    modal.style.display='flex';updateSidebar();draw();
   };
 
-  window.closeInterior = function() { modal.style.display = 'none'; bKey = null; };
+  window.closeInterior=function(){modal.style.display='none';bKey=null;};
 
-  window.saveInterior = function() {
-    if (!bKey) return;
-    localStorage.setItem('interior_' + bKey, JSON.stringify(rooms));
-    const btn = document.getElementById('saveInteriorBtn');
-    btn.textContent = '\u2713 Saved';
-    setTimeout(() => { btn.textContent = '\uD83D\uDCBE Save'; }, 1500);
+  window.saveInterior=function(){
+    if(!bKey)return;
+    localStorage.setItem('interior_'+bKey,JSON.stringify(rooms));
+    localStorage.setItem('fixtures_'+bKey,JSON.stringify(fixtures));
+    const btn=document.getElementById('saveInteriorBtn');
+    btn.textContent='\u2713 Saved';setTimeout(()=>{btn.textContent='\uD83D\uDCBE Save';},1500);
   };
 
-  window.resetInterior = function() {
-    if (!bKey) return;
-    rooms = JSON.parse(JSON.stringify(PRESETS[bKey] || []));
-    selectedIdx = null; updateSidebar(); draw();
+  window.resetInterior=function(){
+    if(!bKey)return;
+    rooms=JSON.parse(JSON.stringify(PRESETS[bKey]||[]));fixtures=[];
+    selectedIdx=null;selectedFixIdx=null;updateSidebar();draw();
   };
 
-  // Backdrop click & keyboard
-  modal.addEventListener('click', e => { if (e.target === modal) window.closeInterior(); });
-  document.addEventListener('keydown', e => {
-    if (modal.style.display !== 'flex') return;
-    if (e.key === 'Escape') window.closeInterior();
-    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIdx !== null
-        && document.activeElement === document.body) {
-      rooms.splice(selectedIdx, 1); selectedIdx = null; updateSidebar(); draw();
+  // ── PDF Export ─────────────────────────────────────────────
+  window.exportFloorPlanPDF=function(){
+    const PRINT_IS=18;
+    const builds=[{key:'house',BW:48,BH:38,label:'House'},{key:'mil',BW:25,BH:25,label:'MIL Suite'},{key:'garage',BW:24,BH:30,label:'Garage'}];
+    const pages=builds.map(b=>{
+      const sb=window._siteBuildings;
+      const bw=(sb&&sb[b.key])?sb[b.key].w:b.BW,bh=(sb&&sb[b.key])?sb[b.key].h:b.BH;
+      const bRooms=localStorage.getItem('interior_'+b.key)?JSON.parse(localStorage.getItem('interior_'+b.key)):JSON.parse(JSON.stringify(PRESETS[b.key]||[]));
+      const bFix=localStorage.getItem('fixtures_'+b.key)?JSON.parse(localStorage.getItem('fixtures_'+b.key)):[];
+      const off=document.createElement('canvas');off.width=bw*PRINT_IS;off.height=bh*PRINT_IS;
+      const oc=off.getContext('2d');
+      render(oc,bw,bh,PRINT_IS,bRooms,bFix,false);
+      const legend=bRooms.map(r=>r.label+' \u2014 '+r.w+"' \u00d7 "+r.h+"' ("+r.w*r.h+' sqft)').join('<br>');
+      return {label:b.label,dims:bw+"' \u00d7 "+bh+"'",sqft:bw*bh,img:off.toDataURL('image/png'),legend};
+    });
+    const html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>382 Stevens Ln \u2014 Floor Plans</title>'
+      +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:#fff;color:#1a1a1a;padding:28px}'
+      +'h1{font-size:20px;font-weight:700;color:#0d2d4a;margin-bottom:2px}.meta{font-size:11px;color:#888;margin-bottom:24px}'
+      +'.fp{margin-bottom:36px}.fp:not(:last-child){page-break-after:always}'
+      +'.fp-hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}'
+      +'.fp-title{font-size:15px;font-weight:700;color:#0d2d4a}.fp-dims{font-size:11px;color:#888}'
+      +'.fp-body{display:flex;gap:18px;align-items:flex-start}.fp-img{border:2px solid #0d2d4a;border-radius:3px;max-width:580px;width:100%}'
+      +'.fp-leg h4{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#aaa;margin-bottom:5px}'
+      +'.fp-leg p{font-size:10.5px;color:#333;line-height:1.9;min-width:150px}'
+      +'</style></head><body>'
+      +'<h1>382 Stevens Ln \u2014 Floor Plans</h1>'
+      +'<p class="meta">Livingston, TX 77351 &nbsp;\u00b7&nbsp; Lots 2 &amp; 3, Block 1, Shelter Cove Sec 5 &nbsp;\u00b7&nbsp; '+new Date().toLocaleDateString()+'</p>'
+      +pages.map(p=>'<div class="fp"><div class="fp-hd"><div class="fp-title">'+p.label+'</div><div class="fp-dims">'+p.dims+' &nbsp;\u00b7&nbsp; '+p.sqft.toLocaleString()+' sqft</div></div>'
+        +'<div class="fp-body"><img class="fp-img" src="'+p.img+'"><div class="fp-leg"><h4>Rooms</h4><p>'+p.legend+'</p></div></div></div>').join('')
+      +'</body></html>';
+    // Try popup first; fall back to blob download
+    const win=window.open('','_blank','width=960,height=740');
+    if(win){win.document.write(html);win.document.close();}
+    else{
+      const blob=new Blob([html],{type:'text/html'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download='382-stevens-floor-plans.html';a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),5000);
     }
+  };
+
+  // ── Keyboard ───────────────────────────────────────────────
+  modal.addEventListener('click',e=>{if(e.target===modal)window.closeInterior();});
+  document.addEventListener('keydown',e=>{
+    if(modal.style.display!=='flex')return;
+    if(e.key==='Escape'){
+      if(pendingFix){pendingFix=null;canvas.style.cursor='default';document.querySelectorAll('[id^="fx_"]').forEach(b=>b.classList.remove('active'));}
+      else window.closeInterior();
+    }
+    if((e.key==='Delete'||e.key==='Backspace')&&document.activeElement===document.body) window.deleteSelected();
   });
-})();
+
+})(); // end interior planner IIFE
 </script>
 
 </body>
