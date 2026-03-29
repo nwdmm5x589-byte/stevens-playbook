@@ -195,6 +195,116 @@
     .planner-info { grid-template-columns: 1fr; }
     .planner-dims { grid-template-columns: 1fr; }
   }
+
+/* ── Interior Modal ──────────────────────────────────────────── */
+#interiorModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.im-box {
+  background: #fff;
+  border-radius: 14px;
+  width: min(960px, 100%);
+  max-height: 92vh;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.45);
+  display: flex;
+  flex-direction: column;
+}
+.im-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e8e8e8;
+  background: #fff;
+  border-radius: 14px 14px 0 0;
+  flex-shrink: 0;
+}
+.im-title  { font-size: 17px; font-weight: 700; color: var(--navy); }
+.im-dims   { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.im-close  {
+  background: none; border: 1px solid #e0e0e0; font-size: 16px;
+  cursor: pointer; color: #666; padding: 5px 11px; border-radius: 6px;
+  font-family: inherit; margin-left: 6px;
+}
+.im-close:hover { background: #f5f5f5; }
+.im-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.im-canvas-wrap {
+  flex: 1;
+  padding: 14px;
+  overflow: auto;
+  background: #f4f4ef;
+  border-right: 1px solid #e8e8e8;
+}
+#interiorCanvas {
+  display: block;
+  border-radius: 4px;
+  box-shadow: 0 2px 14px rgba(0,0,0,0.13);
+  cursor: grab;
+}
+#interiorCanvas:active { cursor: grabbing; }
+.im-sidebar {
+  width: 158px;
+  flex-shrink: 0;
+  padding: 12px 10px;
+  background: #fafafa;
+  overflow-y: auto;
+}
+.im-sidebar-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #aaa;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  margin-top: 4px;
+}
+.im-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  margin-bottom: 3px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  background: white;
+  font-size: 11.5px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.im-chip:hover { background: #f0f0f0; border-color: #ccc; }
+.im-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.im-sel-info { font-size: 11.5px; color: #555; padding: 3px 0; line-height: 1.5; white-space: pre-line; }
+.im-del-btn {
+  width: 100%; padding: 5px 0; border: 1px solid #c62828; color: #c62828;
+  background: white; border-radius: 5px; cursor: pointer; font-size: 11.5px;
+  font-family: inherit; margin-top: 6px;
+}
+.im-del-btn:hover { background: #fff5f5; }
+.im-hint {
+  padding: 7px 16px;
+  background: #f0f7ff;
+  font-size: 11px;
+  color: var(--text-muted);
+  border-top: 1px solid #e0e0e0;
+  border-radius: 0 0 14px 14px;
+  flex-shrink: 0;
+}
 </style>
 </head>
 <body>
@@ -737,6 +847,7 @@
         <button class="tbtn" id="saveLayoutBtn" onclick="saveLayout()" style="background:#1a6b3a;color:white;border-color:#1a6b3a;">💾 Save Layout</button>
         <div class="sep"></div>
         <span style="font-size:11px; color:var(--text-muted);">Scale: 1 grid square = 10ft</span>
+        <span style="font-size:11px; color:#1a6b3a; margin-left:8px;">✦ Click house, garage, or MIL suite to design interior</span>
       </div>
       <div class="planner-canvas-wrap">
         <canvas id="plannerCanvas" width="780" height="760"></canvas>
@@ -1405,7 +1516,7 @@ calcROI();
     pool:     { x: 88, y: 118, w: 16, h: 12, color: 'rgba(100,180,255,0.5)', stroke: '#0277bd', label: 'Pool', sub: 'above-ground', locked: false },
   };
 
-  let dragging = null, dragOffX = 0, dragOffY = 0;
+  let dragging = null, dragOffX = 0, dragOffY = 0, dragMoved = false;
 
   function ftX(ft) { return lot.x + ft * S; }
   function ftY(ft) { return lot.y + ft * S; }
@@ -1813,6 +1924,7 @@ calcROI();
     e.preventDefault();
     const pos = getMousePos(e);
     const hit = hitTest(pos.x, pos.y);
+    dragMoved = false;
     if (hit) {
       dragging = hit;
       dragOffX = pos.x - ftX(buildings[hit].x);
@@ -1822,6 +1934,7 @@ calcROI();
   }
   function onMove(e) {
     if (!dragging) { const p = getMousePos(e); canvas.style.cursor = hitTest(p.x, p.y) ? 'grab' : 'default'; return; }
+    dragMoved = true;
     e.preventDefault();
     const pos = getMousePos(e), b = buildings[dragging];
     let nx = (pos.x - dragOffX - lot.x) / S, ny = (pos.y - dragOffY - lot.y) / S;
@@ -1830,7 +1943,15 @@ calcROI();
     b.y = Math.max(0, Math.min(lotH - b.h, ny));
     draw();
   }
-  function onUp() { if (dragging) { dragging = null; canvas.style.cursor = 'default'; } }
+  function onUp() {
+    if (dragging) {
+      if (!dragMoved && ['house','mil','garage'].includes(dragging)) {
+        window.openInterior(dragging, buildings[dragging]);
+      }
+      dragging = null;
+      canvas.style.cursor = 'default';
+    }
+  }
 
   canvas.addEventListener('mousedown', onDown);
   canvas.addEventListener('mousemove', onMove);
@@ -1904,12 +2025,288 @@ calcROI();
     draw();
   };
 
-  // Expose draw globally for tab switch redraw
+  // Expose globals for interior planner
   window._plannerDraw = draw;
+  window._siteBuildings = buildings;
 
   // Initial draw (delayed to handle hidden section)
   setTimeout(draw, 100);
 })();
 </script>
+
+<!-- ── Interior Layout Modal ─────────────────────────────────── -->
+<div id="interiorModal">
+  <div class="im-box">
+    <div class="im-header">
+      <div>
+        <div class="im-title" id="imTitle">Interior Layout</div>
+        <div class="im-dims"  id="imDims"></div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="tbtn" onclick="resetInterior()" style="font-size:12px;">↺ Reset</button>
+        <button class="tbtn" id="saveInteriorBtn" onclick="saveInterior()" style="background:#1a6b3a;color:white;border-color:#1a6b3a;font-size:12px;">💾 Save</button>
+        <button class="im-close" onclick="closeInterior()">✕</button>
+      </div>
+    </div>
+    <div class="im-body">
+      <div class="im-canvas-wrap">
+        <canvas id="interiorCanvas"></canvas>
+      </div>
+      <div class="im-sidebar">
+        <div class="im-sidebar-lbl">Add Room</div>
+        <div id="imPalette"></div>
+        <div style="margin-top:12px;">
+          <div class="im-sidebar-lbl">Selected</div>
+          <div id="imSelInfo" class="im-sel-info">—</div>
+          <button id="imDelBtn" class="im-del-btn" onclick="deleteRoom()" style="display:none;">🗑 Remove</button>
+        </div>
+      </div>
+    </div>
+    <div class="im-hint">Click room to select &nbsp;·&nbsp; Drag to move &nbsp;·&nbsp; Right-click to delete &nbsp;·&nbsp; Click palette to add rooms &nbsp;·&nbsp; Esc to close</div>
+  </div>
+</div>
+
+<script>
+// ── Interior Planner ──────────────────────────────────────────
+;(function() {
+  const modal  = document.getElementById('interiorModal');
+  const canvas = document.getElementById('interiorCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Room palette catalog
+  const PALETTE = [
+    { label: 'Bedroom',     w: 14, h: 12, color: '#c5cae9', stroke: '#283593' },
+    { label: 'Master Bed',  w: 16, h: 14, color: '#ce93d8', stroke: '#6a1b9a' },
+    { label: 'Bathroom',    w:  9, h:  8, color: '#b2ebf2', stroke: '#00838f' },
+    { label: 'Living Rm',   w: 18, h: 14, color: '#c8e6c9', stroke: '#2e7d32' },
+    { label: 'Kitchen',     w: 14, h: 12, color: '#ffe0b2', stroke: '#e65100' },
+    { label: 'Dining',      w: 12, h: 10, color: '#fff9c4', stroke: '#f9a825' },
+    { label: 'Laundry',     w:  8, h:  8, color: '#f8bbd0', stroke: '#ad1457' },
+    { label: 'Office',      w: 12, h: 10, color: '#b3e5fc', stroke: '#0277bd' },
+    { label: 'Closet',      w:  6, h:  6, color: '#f5f5f5', stroke: '#757575' },
+    { label: 'Hallway',     w:  5, h: 14, color: '#eceff1', stroke: '#546e7a' },
+    { label: 'Mudroom',     w:  8, h:  8, color: '#d7cba0', stroke: '#5d4037' },
+    { label: 'Garage Bay',  w: 12, h: 22, color: '#bbdefb', stroke: '#1565c0' },
+    { label: 'Storage',     w: 10, h:  8, color: '#e0e0e0', stroke: '#424242' },
+    { label: 'Kitchenette', w: 12, h:  8, color: '#ffccbc', stroke: '#bf360c' },
+    { label: 'Utility',     w:  8, h:  6, color: '#dcedc8', stroke: '#558b2f' },
+    { label: 'Open Area',   w: 16, h: 12, color: 'rgba(200,220,200,0.4)', stroke: '#81c784' },
+  ];
+
+  // Default layouts per building
+  const PRESETS = {
+    house: [
+      { label: 'Entry',       w: 10, h:  8, x:  0, y:  0, color: '#eceff1', stroke: '#546e7a' },
+      { label: 'Living Rm',   w: 20, h: 16, x: 10, y:  0, color: '#c8e6c9', stroke: '#2e7d32' },
+      { label: 'Kitchen',     w: 14, h: 14, x: 30, y:  0, color: '#ffe0b2', stroke: '#e65100' },
+      { label: 'Dining',      w: 14, h:  8, x:  0, y:  8, color: '#fff9c4', stroke: '#f9a825' },
+      { label: 'Laundry',     w:  6, h:  8, x: 44, y: 14, color: '#f8bbd0', stroke: '#ad1457' },
+      { label: 'Hallway',     w:  5, h: 16, x: 10, y: 16, color: '#eceff1', stroke: '#546e7a' },
+      { label: 'Master Bed',  w: 16, h: 16, x: 15, y: 16, color: '#ce93d8', stroke: '#6a1b9a' },
+      { label: 'Master Bath', w: 10, h: 10, x: 31, y: 16, color: '#b2ebf2', stroke: '#00838f' },
+      { label: 'Bed 2',       w: 13, h: 13, x:  0, y: 25, color: '#c5cae9', stroke: '#283593' },
+      { label: 'Bath 2',      w:  9, h:  8, x: 13, y: 30, color: '#b2ebf2', stroke: '#00838f' },
+      { label: 'Bed 3',       w: 13, h: 13, x: 31, y: 25, color: '#c5cae9', stroke: '#283593' },
+    ],
+    mil: [
+      { label: 'Bedroom',    w: 14, h: 13, x:  0, y:  0, color: '#c5cae9', stroke: '#283593' },
+      { label: 'Bathroom',   w: 11, h:  8, x: 14, y:  0, color: '#b2ebf2', stroke: '#00838f' },
+      { label: 'Closet',     w: 11, h:  5, x: 14, y:  8, color: '#f5f5f5', stroke: '#757575' },
+      { label: 'Living/Kit', w: 25, h: 12, x:  0, y: 13, color: '#c8e6c9', stroke: '#2e7d32' },
+    ],
+    garage: [
+      { label: 'Bay 1',      w: 12, h: 22, x:  0, y:  0, color: '#bbdefb', stroke: '#1565c0' },
+      { label: 'Bay 2',      w: 12, h: 22, x: 12, y:  0, color: '#bbdefb', stroke: '#1565c0' },
+      { label: 'Storage',    w: 16, h:  8, x:  0, y: 22, color: '#e0e0e0', stroke: '#424242' },
+      { label: 'Workbench',  w:  8, h:  8, x: 16, y: 22, color: '#ffecb3', stroke: '#f9a825' },
+    ]
+  };
+
+  const NAMES = { house: 'House', mil: 'MIL Suite', garage: 'Garage' };
+
+  let rooms = [], selectedIdx = null;
+  let bKey = null, BW = 0, BH = 0, IS = 12;
+  let drag = null, dragOX = 0, dragOY = 0;
+
+  function computeScale() {
+    const maxW = Math.min(window.innerWidth  - 240, 720);
+    const maxH = Math.min(window.innerHeight - 200, 560);
+    IS = Math.min(Math.floor(maxW / BW), Math.floor(maxH / BH));
+    IS = Math.max(8, Math.min(IS, 22));
+    canvas.width  = BW * IS;
+    canvas.height = BH * IS;
+  }
+
+  function draw() {
+    const CW = canvas.width, CH = canvas.height;
+    ctx.clearRect(0, 0, CW, CH);
+    ctx.fillStyle = '#f9f6ef';
+    ctx.fillRect(0, 0, CW, CH);
+
+    // 1ft grid
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 0.5;
+    for (let x = 0; x <= CW; x += IS) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CH); ctx.stroke(); }
+    for (let y = 0; y <= CH; y += IS) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CW,y); ctx.stroke(); }
+
+    // Rooms
+    rooms.forEach((r, i) => {
+      const rx = r.x*IS, ry = r.y*IS, rw = r.w*IS, rh = r.h*IS;
+      ctx.fillStyle = r.color;
+      ctx.fillRect(rx, ry, rw, rh);
+      ctx.strokeStyle = i === selectedIdx ? '#e53935' : (r.stroke || 'rgba(0,0,0,0.25)');
+      ctx.lineWidth   = i === selectedIdx ? 2.5 : 1.5;
+      ctx.strokeRect(rx + 0.75, ry + 0.75, rw - 1.5, rh - 1.5);
+      const fs = Math.min(12, Math.max(7, rw / (r.label.length * 0.65)));
+      ctx.fillStyle = 'rgba(0,0,0,0.68)';
+      ctx.font = 'bold ' + fs + 'px DM Sans, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const cy = ry + rh/2 + (rh > IS*3 ? -(fs*0.5) : 0);
+      ctx.fillText(r.label, rx + rw/2, cy);
+      if (rh > IS*2.5) {
+        ctx.font = '9px DM Mono, monospace';
+        ctx.fillStyle = 'rgba(0,0,0,0.38)';
+        ctx.fillText(r.w + "' \u00d7 " + r.h + "'", rx + rw/2, cy + fs + 2);
+      }
+    });
+
+    // Exterior walls
+    ctx.strokeStyle = '#0d2d4a'; ctx.lineWidth = 5;
+    ctx.strokeRect(2.5, 2.5, CW - 5, CH - 5);
+
+    // Rulers
+    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+    ctx.font = '8px DM Mono, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    const step = IS >= 14 ? 5 : 10;
+    for (let ft = 0; ft <= BW; ft += step) {
+      const px = ft * IS;
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, 5); ctx.stroke();
+      if (ft % 10 === 0 || step === 5) ctx.fillText(ft + "'", px, 14);
+    }
+    ctx.textAlign = 'right';
+    for (let ft = 0; ft <= BH; ft += step) {
+      const py = ft * IS;
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(5, py); ctx.stroke();
+      if (ft % 10 === 0 || step === 5) ctx.fillText(ft + "'", 22, py + 3);
+    }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  }
+
+  function hitRoom(mx, my) {
+    for (let i = rooms.length - 1; i >= 0; i--) {
+      const r = rooms[i];
+      if (mx >= r.x*IS && mx <= (r.x+r.w)*IS && my >= r.y*IS && my <= (r.y+r.h)*IS) return i;
+    }
+    return -1;
+  }
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const sx = canvas.width / rect.width, sy = canvas.height / rect.height;
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (cx - rect.left)*sx, y: (cy - rect.top)*sy };
+  }
+
+  canvas.addEventListener('mousedown', e => {
+    const p = getPos(e), idx = hitRoom(p.x, p.y);
+    selectedIdx = idx >= 0 ? idx : null;
+    drag = idx >= 0 ? idx : null;
+    if (drag !== null) { dragOX = p.x - rooms[drag].x*IS; dragOY = p.y - rooms[drag].y*IS; }
+    updateSidebar(); draw();
+  });
+  canvas.addEventListener('mousemove', e => {
+    if (drag === null) return;
+    const p = getPos(e), r = rooms[drag];
+    r.x = Math.max(0, Math.min(BW - r.w, (p.x - dragOX) / IS));
+    r.y = Math.max(0, Math.min(BH - r.h, (p.y - dragOY) / IS));
+    draw();
+  });
+  canvas.addEventListener('mouseup', () => { drag = null; });
+  canvas.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    const p = getPos(e), idx = hitRoom(p.x, p.y);
+    if (idx >= 0) { rooms.splice(idx, 1); if (selectedIdx >= idx) selectedIdx = null; updateSidebar(); draw(); }
+  });
+
+  function updateSidebar() {
+    const info = document.getElementById('imSelInfo');
+    const del  = document.getElementById('imDelBtn');
+    if (selectedIdx !== null && rooms[selectedIdx]) {
+      const r = rooms[selectedIdx];
+      info.textContent = r.label + '\n' + r.w + "' \u00d7 " + r.h + "' (" + (r.w*r.h) + ' sqft)';
+      del.style.display = 'block';
+    } else {
+      info.textContent = '\u2014';
+      del.style.display = 'none';
+    }
+  }
+
+  // Build palette buttons
+  (function() {
+    const wrap = document.getElementById('imPalette');
+    if (!wrap) return;
+    PALETTE.forEach(p => {
+      const btn = document.createElement('button');
+      btn.className = 'im-chip';
+      btn.innerHTML = '<span class="im-dot" style="background:' + p.color + ';border:1px solid ' + p.stroke + ';"></span>' + p.label;
+      btn.onclick = () => {
+        rooms.push(Object.assign({}, p, { x: 1, y: 1 }));
+        selectedIdx = rooms.length - 1;
+        updateSidebar(); draw();
+      };
+      wrap.appendChild(btn);
+    });
+  })();
+
+  window.deleteRoom = function() {
+    if (selectedIdx !== null) { rooms.splice(selectedIdx, 1); selectedIdx = null; updateSidebar(); draw(); }
+  };
+
+  window.openInterior = function(key, building) {
+    bKey = key;
+    BW = building ? building.w : { house:48, mil:25, garage:24 }[key];
+    BH = building ? building.h : { house:38, mil:25, garage:30 }[key];
+    computeScale();
+    const saved = localStorage.getItem('interior_' + key);
+    rooms = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(PRESETS[key] || []));
+    selectedIdx = null;
+    document.getElementById('imTitle').textContent = (NAMES[key] || key) + ' \u2014 Interior Layout';
+    document.getElementById('imDims').textContent  = BW + "' \u00d7 " + BH + "'  \u00b7  " + (BW*BH).toLocaleString() + ' sqft';
+    modal.style.display = 'flex';
+    updateSidebar(); draw();
+  };
+
+  window.closeInterior = function() { modal.style.display = 'none'; bKey = null; };
+
+  window.saveInterior = function() {
+    if (!bKey) return;
+    localStorage.setItem('interior_' + bKey, JSON.stringify(rooms));
+    const btn = document.getElementById('saveInteriorBtn');
+    btn.textContent = '\u2713 Saved';
+    setTimeout(() => { btn.textContent = '\uD83D\uDCBE Save'; }, 1500);
+  };
+
+  window.resetInterior = function() {
+    if (!bKey) return;
+    rooms = JSON.parse(JSON.stringify(PRESETS[bKey] || []));
+    selectedIdx = null; updateSidebar(); draw();
+  };
+
+  // Backdrop click & keyboard
+  modal.addEventListener('click', e => { if (e.target === modal) window.closeInterior(); });
+  document.addEventListener('keydown', e => {
+    if (modal.style.display !== 'flex') return;
+    if (e.key === 'Escape') window.closeInterior();
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIdx !== null
+        && document.activeElement === document.body) {
+      rooms.splice(selectedIdx, 1); selectedIdx = null; updateSidebar(); draw();
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
