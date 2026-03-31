@@ -647,7 +647,7 @@
       <div class="phase-num">3</div>
       <div>
         <div class="phase-title">Floor Plan Designer</div>
-        <div class="phase-sub">Interactive interior layout — drag rooms, place fixtures, export PDF</div>
+        <div class="phase-sub">Interactive interior layout — drag rooms, place fixtures, export contractor-grade construction docs</div>
       </div>
     </div>
 
@@ -672,7 +672,8 @@
           <div class="sep"></div>
           <button class="tbtn" onclick="fpReset()">↺ Reset</button>
           <button class="tbtn" id="fpSaveBtn" onclick="fpSave()" style="background:#1a6b3a;color:white;border-color:#1a6b3a;">💾 Save</button>
-          <button class="tbtn" onclick="exportFloorPlanPDF()">📄 Export PDF</button>
+          <button class="tbtn" onclick="exportConstructionDocs()" style="background:#0d2d4a;color:white;border-color:#0d2d4a;">📋 Construction Docs</button>
+          <button class="tbtn" onclick="exportDrawingOnly()">📄 Drawings Only</button>
         </div>
         <div class="planner-canvas-wrap" style="flex:1;background:#f8f8f5;">
           <canvas id="fpCanvas" style="display:block;"></canvas>
@@ -1956,7 +1957,7 @@ calcROI();
         <div class="im-dims"  id="imDims"></div>
       </div>
       <div style="display:flex;gap:6px;align-items:center;">
-        <button class="tbtn" onclick="exportFloorPlanPDF()" style="font-size:12px;">📄 Export PDF</button>
+        <button class="tbtn" onclick="exportConstructionDocs()" style="font-size:12px;background:#0d2d4a;color:white;border-color:#0d2d4a;">📋 Construction Docs</button>
         <button class="tbtn" onclick="resetInterior()" style="font-size:12px;">↺ Reset</button>
         <button class="tbtn" id="saveInteriorBtn" onclick="saveInterior()" style="background:#1a6b3a;color:white;border-color:#1a6b3a;font-size:12px;">💾 Save</button>
         <button class="im-close" onclick="closeInterior()">✕</button>
@@ -3001,6 +3002,844 @@ calcROI();
     const fp = document.getElementById('floorplan');
     if (fp && fp.style.display !== 'none' && !bKey) window.fpSelect('house');
   }, 200);
+
+})();
+</script>
+
+<script>
+// ── Construction Documents Export System ─────────────────────────
+// Generates contractor-grade drawings & schedules (electrical, plumbing, HVAC)
+;(function() {
+
+  // ══════════════════════════════════════════════════════════════
+  // TRADE SPECS — code-compliant defaults for every fixture type
+  // ══════════════════════════════════════════════════════════════
+  const ELEC_SPECS = {
+    light:     { breaker:'15A', wire:'14/2 NM-B', load:100, desc:'Ceiling Light' },
+    recessed:  { breaker:'15A', wire:'14/2 NM-B', load: 75, desc:'Recessed Light' },
+    fan:       { breaker:'15A', wire:'14/2 NM-B', load:120, desc:'Ceiling Fan w/ Light' },
+    outlet:    { breaker:'15A', wire:'14/2 NM-B', load:180, desc:'Duplex Receptacle' },
+    gfci:      { breaker:'20A', wire:'12/2 NM-B', load:180, desc:'GFCI Receptacle', note:'Required within 6\' of water source (NEC 210.8)' },
+    switch:    { breaker:'15A', wire:'14/2 NM-B', load:  0, desc:'Single-Pole Switch' },
+    dimmer:    { breaker:'15A', wire:'14/2 NM-B', load:  0, desc:'Dimmer Switch' },
+    smoke:     { breaker:'15A', wire:'14/2 NM-B', load: 10, desc:'Smoke/CO Detector', note:'Interconnected, battery backup (IRC R314)' },
+    panel:     { breaker:'200A Main', wire:'2/0 AL SER', load:0, desc:'Service Panel', note:'200A service entrance' },
+    meter:     { breaker:'—',  wire:'SER cable',  load:  0, desc:'Electric Meter Base', note:'Utility-side, coordinate w/ provider' },
+  };
+  const PLMB_SPECS = {
+    sink:       { supply:'1/2" H&C', drain:'1-1/2"', vent:'1-1/2"', desc:'Kitchen Sink' },
+    doublesink: { supply:'1/2" H&C', drain:'1-1/2"', vent:'1-1/2"', desc:'Double Basin Sink' },
+    toilet:     { supply:'3/8" CW',  drain:'3"',     vent:'2"',     desc:'Toilet (1.28 GPF)' },
+    shower:     { supply:'1/2" H&C', drain:'2"',     vent:'1-1/2"', desc:'Shower Stall' },
+    bathtub:    { supply:'1/2" H&C', drain:'1-1/2"', vent:'1-1/2"', desc:'Bathtub' },
+    utilitysink:{ supply:'1/2" H&C', drain:'1-1/2"', vent:'1-1/2"', desc:'Utility/Laundry Sink' },
+    waterheater:{ supply:'3/4" CW',  drain:'—',      vent:'—',      desc:'Water Heater (40-50 gal)', note:'T&P relief valve + drain pan required' },
+    floordrain: { supply:'—',        drain:'2"',     vent:'1-1/2"', desc:'Floor Drain' },
+  };
+  const HVAC_SPECS = {
+    furnace:    { size:'60-80K BTU', desc:'Gas Furnace', note:'Dedicated circuit, combustion air required' },
+    ac:         { size:'2.5-3 Ton',  desc:'A/C Condenser', note:'30A/240V dedicated circuit' },
+    thermostat: { size:'—',          desc:'Thermostat', note:'18/5 thermostat wire' },
+    vent:       { size:'6"×10"',     desc:'Supply Register' },
+    returnvent: { size:'14"×20"',    desc:'Return Air Grille' },
+  };
+  const APPL_SPECS = {
+    stove:      { breaker:'40A/240V', wire:'8/3 NM-B', load:9600, desc:'Range/Oven', note:'Dedicated 40A circuit' },
+    hood:       { breaker:'15A', wire:'14/2 NM-B', load:300, desc:'Range Hood' },
+    microwave:  { breaker:'20A', wire:'12/2 NM-B', load:1500, desc:'Microwave (built-in)', note:'Dedicated 20A circuit' },
+    fridge:     { breaker:'20A', wire:'12/2 NM-B', load:600, desc:'Refrigerator', note:'Dedicated 20A circuit' },
+    dishwasher: { breaker:'20A', wire:'12/2 NM-B', load:1800, desc:'Dishwasher', note:'Dedicated 20A circuit, GFCI protected' },
+    washer:     { breaker:'20A', wire:'12/2 NM-B', load:1200, desc:'Washing Machine', note:'GFCI protected, dedicated circuit' },
+    dryer:      { breaker:'30A/240V', wire:'10/3 NM-B', load:5400, desc:'Clothes Dryer', note:'Dedicated 30A/240V circuit' },
+  };
+  const MAT_COSTS = {
+    outlet:2.00, gfci:13.00, switch:3.00, dimmer:12.00, light:15.00, recessed:8.00,
+    fan:65.00, smoke:28.00, panel:180.00, meter:45.00,
+    sink:85.00, doublesink:120.00, toilet:150.00, shower:180.00, bathtub:200.00,
+    utilitysink:65.00, waterheater:450.00, floordrain:12.00,
+    furnace:1200.00, ac:1800.00, thermostat:45.00, vent:8.00, returnvent:12.00,
+    stove:650.00, hood:180.00, microwave:250.00, fridge:800.00, dishwasher:400.00,
+    washer:550.00, dryer:500.00,
+    garagedoor:950.00, garagedoor2:1400.00, garageopener:280.00, workbench:200.00,
+    door:120.00, window:250.00, stairs:0, fireplace:0, tv:0, camera:65.00,
+  };
+  // Wire cost per foot
+  const WIRE_COSTS = { '14/2 NM-B':0.35, '12/2 NM-B':0.55, '10/3 NM-B':1.20, '8/3 NM-B':1.80, '2/0 AL SER':3.50, 'SER cable':3.50, '18/5 thermostat':0.25 };
+
+  const ELEC_TYPES = new Set(Object.keys(ELEC_SPECS));
+  const PLMB_TYPES = new Set(Object.keys(PLMB_SPECS));
+  const HVAC_TYPES = new Set(Object.keys(HVAC_SPECS));
+  const APPL_TYPES = new Set(Object.keys(APPL_SPECS));
+
+  function fixtureTrade(type) {
+    if (ELEC_TYPES.has(type)) return 'electrical';
+    if (PLMB_TYPES.has(type)) return 'plumbing';
+    if (HVAC_TYPES.has(type)) return 'hvac';
+    if (APPL_TYPES.has(type)) return 'appliance';
+    return 'general';
+  }
+
+  function fixtureSpec(type) {
+    return ELEC_SPECS[type] || PLMB_SPECS[type] || HVAC_SPECS[type] || APPL_SPECS[type] || { desc: type };
+  }
+
+  // Determine which room a fixture is inside
+  function fixtureRoom(f, rooms) {
+    for (const r of rooms) {
+      if (f.x >= r.x && f.x <= r.x + r.w && f.y >= r.y && f.y <= r.y + r.h) return r.label;
+    }
+    return '—';
+  }
+
+  // Assign IDs: E1, E2 for electrical; P1, P2 for plumbing; H1, H2 for HVAC; A1, A2 for appliances
+  function assignIDs(fixtures, rooms) {
+    const counters = { electrical: 0, plumbing: 0, hvac: 0, appliance: 0, general: 0 };
+    const prefixes = { electrical:'E', plumbing:'P', hvac:'H', appliance:'A', general:'G' };
+    return fixtures.map(f => {
+      const trade = fixtureTrade(f.type);
+      counters[trade]++;
+      return {
+        ...f,
+        id: prefixes[trade] + counters[trade],
+        trade,
+        room: fixtureRoom(f, rooms),
+        spec: fixtureSpec(f.type),
+      };
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // CONSTRUCTION SYMBOL DRAWING (ANSI/IEEE standard symbols)
+  // ══════════════════════════════════════════════════════════════
+  function drawConstructionSym(c, type, cx, cy, size) {
+    const r = size / 2;
+    c.save();
+    c.translate(cx, cy);
+    c.strokeStyle = '#1a1a1a';
+    c.fillStyle = '#1a1a1a';
+    c.lineWidth = Math.max(1.5, size / 12);
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+
+    switch (type) {
+      // ── ELECTRICAL ───────────────────────────
+      case 'outlet': // Standard duplex: circle with two horizontal lines
+        c.beginPath(); c.arc(0, 0, r * 0.7, 0, Math.PI * 2); c.stroke();
+        c.beginPath(); c.moveTo(-r, 0); c.lineTo(-r * 0.7, 0); c.stroke();
+        c.beginPath(); c.moveTo(r * 0.7, 0); c.lineTo(r, 0); c.stroke();
+        break;
+      case 'gfci': // GFCI: circle with lines + "GFI" text
+        c.beginPath(); c.arc(0, 0, r * 0.7, 0, Math.PI * 2); c.stroke();
+        c.beginPath(); c.moveTo(-r, 0); c.lineTo(-r * 0.7, 0); c.stroke();
+        c.beginPath(); c.moveTo(r * 0.7, 0); c.lineTo(r, 0); c.stroke();
+        c.font = 'bold ' + Math.max(7, size * 0.28) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText('GFI', 0, 0);
+        break;
+      case 'light': // Ceiling light: circle with 4 radiating lines
+        c.beginPath(); c.arc(0, 0, r * 0.55, 0, Math.PI * 2); c.stroke();
+        for (let i = 0; i < 4; i++) {
+          const a = i * Math.PI / 2;
+          c.beginPath();
+          c.moveTo(Math.cos(a) * r * 0.55, Math.sin(a) * r * 0.55);
+          c.lineTo(Math.cos(a) * r * 0.9, Math.sin(a) * r * 0.9);
+          c.stroke();
+        }
+        break;
+      case 'recessed': // Recessed: circle with "R"
+        c.beginPath(); c.arc(0, 0, r * 0.65, 0, Math.PI * 2); c.stroke();
+        c.font = 'bold ' + Math.max(8, size * 0.4) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText('R', 0, 0);
+        break;
+      case 'fan': // Ceiling fan: circle with "F"
+        c.beginPath(); c.arc(0, 0, r * 0.65, 0, Math.PI * 2); c.stroke();
+        c.font = 'bold ' + Math.max(8, size * 0.4) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText('F', 0, 0);
+        break;
+      case 'switch': // Switch: "S" with a line
+        c.font = 'bold ' + Math.max(8, size * 0.42) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText('S', 0, 0);
+        c.beginPath(); c.moveTo(r * 0.4, -r * 0.3); c.lineTo(r * 0.9, -r * 0.6); c.stroke();
+        break;
+      case 'dimmer': // Dimmer: "S" with "D"
+        c.font = 'bold ' + Math.max(7, size * 0.32) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText('S', -r * 0.15, 0);
+        c.font = Math.max(6, size * 0.24) + 'px sans-serif';
+        c.fillText('D', r * 0.3, r * 0.15);
+        c.beginPath(); c.moveTo(r * 0.2, -r * 0.3); c.lineTo(r * 0.7, -r * 0.6); c.stroke();
+        break;
+      case 'smoke': // Smoke detector: circle with "SD"
+        c.beginPath(); c.arc(0, 0, r * 0.65, 0, Math.PI * 2); c.stroke();
+        c.font = 'bold ' + Math.max(6, size * 0.28) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText('SD', 0, 0);
+        break;
+      case 'panel': // Panel: rectangle with "PANEL"
+        c.strokeRect(-r * 0.7, -r * 0.9, r * 1.4, r * 1.8);
+        c.beginPath(); c.moveTo(0, -r * 0.9); c.lineTo(0, r * 0.9); c.stroke();
+        for (let i = 0; i < 6; i++) {
+          const y = -r * 0.72 + i * r * 0.28;
+          c.fillRect(-r * 0.58, y - 1, r * 0.46, 2);
+          c.fillRect(r * 0.12, y - 1, r * 0.46, 2);
+        }
+        break;
+      case 'meter': // Meter: circle with "M"
+        c.beginPath(); c.arc(0, 0, r * 0.65, 0, Math.PI * 2); c.stroke();
+        c.font = 'bold ' + Math.max(8, size * 0.4) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText('M', 0, 0);
+        break;
+
+      // ── PLUMBING ─────────────────────────────
+      case 'sink': // Sink: rectangle with X (drain)
+        c.strokeRect(-r * 0.8, -r * 0.5, r * 1.6, r);
+        c.beginPath(); c.moveTo(-r * 0.6, -r * 0.3); c.lineTo(r * 0.6, r * 0.3); c.stroke();
+        c.beginPath(); c.moveTo(r * 0.6, -r * 0.3); c.lineTo(-r * 0.6, r * 0.3); c.stroke();
+        break;
+      case 'doublesink':
+        c.strokeRect(-r, -r * 0.5, r * 2, r);
+        c.beginPath(); c.moveTo(0, -r * 0.5); c.lineTo(0, r * 0.5); c.stroke();
+        // X in each basin
+        c.beginPath(); c.moveTo(-r * 0.85, -r * 0.35); c.lineTo(-r * 0.15, r * 0.35); c.stroke();
+        c.beginPath(); c.moveTo(-r * 0.15, -r * 0.35); c.lineTo(-r * 0.85, r * 0.35); c.stroke();
+        c.beginPath(); c.moveTo(r * 0.15, -r * 0.35); c.lineTo(r * 0.85, r * 0.35); c.stroke();
+        c.beginPath(); c.moveTo(r * 0.85, -r * 0.35); c.lineTo(r * 0.15, r * 0.35); c.stroke();
+        break;
+      case 'toilet': // Toilet: tank rectangle + bowl ellipse
+        c.strokeRect(-r * 0.45, -r * 0.8, r * 0.9, r * 0.5);
+        c.beginPath(); c.ellipse(0, r * 0.25, r * 0.5, r * 0.6, 0, 0, Math.PI * 2); c.stroke();
+        break;
+      case 'shower': // Shower: square with diagonal lines (tile pattern)
+        c.strokeRect(-r * 0.8, -r * 0.8, r * 1.6, r * 1.6);
+        c.beginPath();
+        for (let i = -3; i <= 3; i++) {
+          c.moveTo(-r * 0.8 + i * r * 0.4, -r * 0.8);
+          c.lineTo(-r * 0.8 + i * r * 0.4 + r * 1.6, r * 0.8);
+        }
+        c.stroke();
+        // Drain dot
+        c.beginPath(); c.arc(0, 0, r * 0.12, 0, Math.PI * 2); c.fill();
+        break;
+      case 'bathtub': // Bathtub: rectangle with rounded end
+        c.strokeRect(-r * 0.9, -r * 0.45, r * 1.8, r * 0.9);
+        c.beginPath(); c.arc(r * 0.5, 0, r * 0.35, -Math.PI / 2, Math.PI / 2); c.stroke();
+        break;
+      case 'utilitysink':
+        c.strokeRect(-r * 0.7, -r * 0.7, r * 1.4, r * 1.4);
+        c.beginPath(); c.moveTo(-r * 0.5, -r * 0.5); c.lineTo(r * 0.5, r * 0.5); c.stroke();
+        c.beginPath(); c.moveTo(r * 0.5, -r * 0.5); c.lineTo(-r * 0.5, r * 0.5); c.stroke();
+        c.font = Math.max(6, size * 0.2) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'top';
+        c.fillText('UTIL', 0, r * 0.55);
+        break;
+      case 'waterheater': // Water heater: circle with "WH"
+        c.beginPath(); c.arc(0, 0, r * 0.7, 0, Math.PI * 2); c.stroke();
+        c.font = 'bold ' + Math.max(7, size * 0.3) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText('WH', 0, 0);
+        break;
+      case 'floordrain': // Floor drain: circle with cross
+        c.beginPath(); c.arc(0, 0, r * 0.6, 0, Math.PI * 2); c.stroke();
+        c.beginPath(); c.moveTo(-r * 0.42, 0); c.lineTo(r * 0.42, 0); c.stroke();
+        c.beginPath(); c.moveTo(0, -r * 0.42); c.lineTo(0, r * 0.42); c.stroke();
+        break;
+
+      // ── HVAC ─────────────────────────────────
+      case 'vent': // Supply vent: rectangle with arrows out
+        c.strokeRect(-r * 0.7, -r * 0.35, r * 1.4, r * 0.7);
+        // Arrows pointing outward
+        c.beginPath(); c.moveTo(0, -r * 0.35); c.lineTo(0, -r * 0.65); c.stroke();
+        c.beginPath(); c.moveTo(-r * 0.12, -r * 0.5); c.lineTo(0, -r * 0.65); c.lineTo(r * 0.12, -r * 0.5); c.stroke();
+        break;
+      case 'returnvent': // Return vent: rectangle with arrow in
+        c.strokeRect(-r * 0.7, -r * 0.35, r * 1.4, r * 0.7);
+        c.beginPath(); c.moveTo(0, -r * 0.65); c.lineTo(0, -r * 0.35); c.stroke();
+        c.beginPath(); c.moveTo(-r * 0.12, -r * 0.5); c.lineTo(0, -r * 0.35); c.lineTo(r * 0.12, -r * 0.5); c.stroke();
+        break;
+      case 'thermostat': // Thermostat: circle with "T"
+        c.beginPath(); c.arc(0, 0, r * 0.55, 0, Math.PI * 2); c.stroke();
+        c.font = 'bold ' + Math.max(8, size * 0.4) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText('T', 0, 0);
+        break;
+      case 'furnace': // Furnace: rectangle with flame
+        c.strokeRect(-r * 0.7, -r * 0.7, r * 1.4, r * 1.4);
+        c.beginPath(); c.moveTo(0, r * 0.5); c.bezierCurveTo(-r * 0.3, 0, r * 0.3, 0, 0, -r * 0.5); c.stroke();
+        break;
+      case 'ac': // AC: rectangle with snowflake-like pattern
+        c.strokeRect(-r * 0.8, -r * 0.5, r * 1.6, r);
+        c.beginPath(); c.moveTo(-r * 0.4, 0); c.lineTo(r * 0.4, 0); c.stroke();
+        c.beginPath(); c.moveTo(0, -r * 0.3); c.lineTo(0, r * 0.3); c.stroke();
+        c.beginPath(); c.moveTo(-r * 0.28, -r * 0.2); c.lineTo(r * 0.28, r * 0.2); c.stroke();
+        c.beginPath(); c.moveTo(r * 0.28, -r * 0.2); c.lineTo(-r * 0.28, r * 0.2); c.stroke();
+        break;
+
+      // ── APPLIANCES (drawn with label) ────────
+      case 'stove':
+        c.strokeRect(-r * 0.8, -r * 0.8, r * 1.6, r * 1.6);
+        [[-r * 0.35, -r * 0.35], [r * 0.35, -r * 0.35], [-r * 0.35, r * 0.35], [r * 0.35, r * 0.35]].forEach(([bx, by]) => {
+          c.beginPath(); c.arc(bx, by, r * 0.22, 0, Math.PI * 2); c.stroke();
+        });
+        break;
+      case 'fridge':
+        c.strokeRect(-r * 0.55, -r * 0.85, r * 1.1, r * 1.7);
+        c.beginPath(); c.moveTo(-r * 0.55, r * 0.05); c.lineTo(r * 0.55, r * 0.05); c.stroke();
+        break;
+      case 'dishwasher':
+        c.strokeRect(-r * 0.7, -r * 0.5, r * 1.4, r);
+        c.font = 'bold ' + Math.max(7, size * 0.3) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('DW', 0, 0);
+        break;
+      case 'washer':
+        c.strokeRect(-r * 0.8, -r * 0.8, r * 1.6, r * 1.6);
+        c.font = 'bold ' + Math.max(7, size * 0.3) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('W', 0, 0);
+        break;
+      case 'dryer':
+        c.strokeRect(-r * 0.8, -r * 0.8, r * 1.6, r * 1.6);
+        c.font = 'bold ' + Math.max(7, size * 0.3) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('D', 0, 0);
+        break;
+      case 'hood':
+        c.beginPath(); c.moveTo(-r * 0.7, -r * 0.3); c.lineTo(r * 0.7, -r * 0.3);
+        c.lineTo(r * 0.45, r * 0.3); c.lineTo(-r * 0.45, r * 0.3); c.closePath(); c.stroke();
+        break;
+      case 'microwave':
+        c.strokeRect(-r * 0.7, -r * 0.4, r * 1.4, r * 0.8);
+        c.font = 'bold ' + Math.max(6, size * 0.22) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('MW', 0, 0);
+        break;
+
+      // ── GENERAL ──────────────────────────────
+      case 'door':
+        c.lineWidth = Math.max(2, size / 8);
+        c.beginPath(); c.moveTo(0, -r * 0.05); c.lineTo(0, r * 0.95); c.stroke();
+        c.lineWidth = Math.max(1, size / 14);
+        c.beginPath(); c.arc(0, r * 0.95, r * 0.85, -Math.PI / 2, 0); c.stroke();
+        break;
+      case 'window':
+        c.lineWidth = Math.max(2, size / 8);
+        c.strokeRect(-r * 0.85, -r * 0.08, r * 1.7, r * 0.16);
+        c.lineWidth = Math.max(1, size / 14);
+        c.beginPath(); c.moveTo(-r * 0.85, 0); c.lineTo(r * 0.85, 0); c.stroke();
+        break;
+      case 'garagedoor':
+        c.strokeRect(-r, -r * 0.35, r * 2, r * 0.7);
+        for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(-r, -r * 0.35 + i * r * 0.175); c.lineTo(r, -r * 0.35 + i * r * 0.175); c.stroke(); }
+        break;
+      case 'garagedoor2':
+        c.strokeRect(-r, -r * 0.35, r * 2, r * 0.7);
+        c.beginPath(); c.moveTo(0, -r * 0.35); c.lineTo(0, r * 0.35); c.stroke();
+        for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(-r, -r * 0.35 + i * r * 0.175); c.lineTo(r, -r * 0.35 + i * r * 0.175); c.stroke(); }
+        break;
+      default:
+        // Fallback: filled square with type initial
+        c.strokeRect(-r * 0.6, -r * 0.6, r * 1.2, r * 1.2);
+        c.font = 'bold ' + Math.max(7, size * 0.35) + 'px sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(type.charAt(0).toUpperCase(), 0, 0);
+        break;
+    }
+    c.restore();
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // BLUEPRINT RENDERER — construction-drawing style
+  // ══════════════════════════════════════════════════════════════
+  function renderConstructionPlan(c, bw, bh, scale, rooms, fixtures, buildingLabel) {
+    const CW = bw * scale, CH = bh * scale;
+    const MARGIN_TOP = 30, MARGIN_BOT = 80, MARGIN_SIDE = 30;
+    const TW = CW + MARGIN_SIDE * 2, TH = CH + MARGIN_TOP + MARGIN_BOT;
+
+    c.canvas.width = TW;
+    c.canvas.height = TH;
+
+    // White background
+    c.fillStyle = '#ffffff';
+    c.fillRect(0, 0, TW, TH);
+
+    c.save();
+    c.translate(MARGIN_SIDE, MARGIN_TOP);
+
+    // Grid (light gray, 1ft increments)
+    c.strokeStyle = '#e0e0e0'; c.lineWidth = 0.5;
+    for (let x = 0; x <= CW; x += scale) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, CH); c.stroke(); }
+    for (let y = 0; y <= CH; y += scale) { c.beginPath(); c.moveTo(0, y); c.lineTo(CW, y); c.stroke(); }
+
+    // Rooms — white fill, black outlines, dimensions
+    rooms.forEach(r => {
+      const rx = r.x * scale, ry = r.y * scale, rw = r.w * scale, rh = r.h * scale;
+      c.fillStyle = '#ffffff';
+      c.fillRect(rx, ry, rw, rh);
+      c.strokeStyle = '#1a1a1a';
+      c.lineWidth = 2.5;
+      c.strokeRect(rx, ry, rw, rh);
+
+      // Room label
+      const fs = Math.min(14, Math.max(8, rw / (r.label.length * 0.7)));
+      c.fillStyle = '#1a1a1a';
+      c.font = '600 ' + fs + 'px sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(r.label, rx + rw / 2, ry + rh / 2 - 7);
+      // Dimensions
+      c.font = '11px monospace';
+      c.fillStyle = '#555555';
+      c.fillText(r.w + "' × " + r.h + "'", rx + rw / 2, ry + rh / 2 + 8);
+    });
+
+    // Exterior walls (thick)
+    c.strokeStyle = '#000000'; c.lineWidth = 4;
+    c.strokeRect(0, 0, CW, CH);
+
+    // Dimension lines along top and left
+    c.strokeStyle = '#888'; c.lineWidth = 0.75; c.fillStyle = '#666';
+    c.font = '9px monospace'; c.textAlign = 'center'; c.textBaseline = 'bottom';
+    for (let ft = 0; ft <= bw; ft += 5) {
+      const px = ft * scale;
+      c.beginPath(); c.moveTo(px, -2); c.lineTo(px, -10); c.stroke();
+      if (ft % 10 === 0) c.fillText(ft + "'", px, -11);
+    }
+    c.textAlign = 'right'; c.textBaseline = 'middle';
+    for (let ft = 0; ft <= bh; ft += 5) {
+      const py = ft * scale;
+      c.beginPath(); c.moveTo(-2, py); c.lineTo(-10, py); c.stroke();
+      if (ft % 10 === 0) c.fillText(ft + "'", -12, py);
+    }
+
+    // Fixtures with construction symbols + ID tags
+    const tagged = assignIDs(fixtures, rooms);
+    tagged.forEach(f => {
+      const sz = (f.szFt || 2) * scale;
+      drawConstructionSym(c, f.type, f.x * scale, f.y * scale, sz);
+      // ID tag
+      c.font = 'bold 9px monospace';
+      c.fillStyle = '#cc0000';
+      c.textAlign = 'left'; c.textBaseline = 'bottom';
+      c.fillText(f.id, f.x * scale + sz / 2 + 2, f.y * scale - 2);
+    });
+
+    c.restore();
+
+    // ── Title block (bottom) ─────────────────────
+    const tbY = TH - MARGIN_BOT + 15;
+    c.strokeStyle = '#000'; c.lineWidth = 1.5;
+    c.strokeRect(MARGIN_SIDE, tbY, CW, MARGIN_BOT - 20);
+
+    c.fillStyle = '#1a1a1a';
+    c.font = 'bold 13px sans-serif'; c.textAlign = 'left'; c.textBaseline = 'top';
+    c.fillText('382 Stevens Ln — ' + buildingLabel + ' Floor Plan', MARGIN_SIDE + 8, tbY + 6);
+    c.font = '10px sans-serif'; c.fillStyle = '#555';
+    c.fillText('Livingston, TX 77351  |  Lots 2 & 3, Block 1, Shelter Cove Sec 5', MARGIN_SIDE + 8, tbY + 24);
+    c.fillText('Date: ' + new Date().toLocaleDateString() + '  |  Scale: 1 sq = 1\'  |  Drawing: ' + buildingLabel.toUpperCase().replace(/\s/g, '-') + '-FP-01', MARGIN_SIDE + 8, tbY + 38);
+
+    // North arrow (top-right)
+    c.save(); c.translate(TW - 45, 18);
+    c.strokeStyle = '#333'; c.fillStyle = '#333'; c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(0, 12); c.lineTo(0, -12); c.stroke();
+    c.beginPath(); c.moveTo(-5, -5); c.lineTo(0, -12); c.lineTo(5, -5); c.fill();
+    c.font = 'bold 9px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'top';
+    c.fillText('N', 0, 13);
+    c.restore();
+
+    return tagged; // Return tagged fixtures for schedule generation
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // LEGEND GENERATOR
+  // ══════════════════════════════════════════════════════════════
+  function generateLegendCanvas(usedTypes) {
+    const items = [];
+    usedTypes.forEach(t => {
+      const spec = fixtureSpec(t);
+      items.push({ type: t, label: spec.desc || t });
+    });
+    if (items.length === 0) return null;
+
+    const cols = Math.min(3, items.length);
+    const rows = Math.ceil(items.length / cols);
+    const CW = cols * 200, CH = rows * 28 + 30;
+    const cvs = document.createElement('canvas');
+    cvs.width = CW; cvs.height = CH;
+    const c = cvs.getContext('2d');
+
+    c.fillStyle = '#fff'; c.fillRect(0, 0, CW, CH);
+    c.strokeStyle = '#ccc'; c.lineWidth = 1; c.strokeRect(0, 0, CW, CH);
+    c.fillStyle = '#1a1a1a'; c.font = 'bold 10px sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle';
+    c.fillText('SYMBOL LEGEND', 8, 14);
+
+    items.forEach((item, i) => {
+      const col = i % cols, row = Math.floor(i / cols);
+      const x = col * 200 + 12, y = 28 + row * 28 + 6;
+      drawConstructionSym(c, item.type, x + 10, y, 18);
+      c.fillStyle = '#1a1a1a'; c.font = '10px sans-serif';
+      c.textAlign = 'left'; c.textBaseline = 'middle';
+      c.fillText(item.label, x + 26, y);
+    });
+
+    return cvs.toDataURL('image/png');
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // SCHEDULE GENERATORS — return HTML strings
+  // ══════════════════════════════════════════════════════════════
+  function generateElectricalSchedule(allTagged) {
+    const elec = allTagged.filter(f => f.trade === 'electrical' || f.trade === 'appliance');
+    if (elec.length === 0) return '<p style="color:#888;font-style:italic;">No electrical fixtures placed.</p>';
+    let html = '<table><thead><tr><th>ID</th><th>Fixture</th><th>Room</th><th>Breaker</th><th>Wire</th><th>Est. Load</th><th>Notes</th></tr></thead><tbody>';
+    elec.forEach(f => {
+      const s = f.spec;
+      html += '<tr><td><strong>' + f.id + '</strong></td><td>' + (s.desc || f.type) + '</td><td>' + f.room + '</td><td>' + (s.breaker || '—') + '</td><td>' + (s.wire || '—') + '</td><td>' + (s.load ? s.load + 'W' : '—') + '</td><td>' + (s.note || '') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function generatePlumbingSchedule(allTagged) {
+    const plmb = allTagged.filter(f => f.trade === 'plumbing');
+    if (plmb.length === 0) return '<p style="color:#888;font-style:italic;">No plumbing fixtures placed.</p>';
+    let html = '<table><thead><tr><th>ID</th><th>Fixture</th><th>Room</th><th>Supply</th><th>Drain</th><th>Vent</th><th>Notes</th></tr></thead><tbody>';
+    plmb.forEach(f => {
+      const s = f.spec;
+      html += '<tr><td><strong>' + f.id + '</strong></td><td>' + (s.desc || f.type) + '</td><td>' + f.room + '</td><td>' + (s.supply || '—') + '</td><td>' + (s.drain || '—') + '</td><td>' + (s.vent || '—') + '</td><td>' + (s.note || '') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function generateHVACSchedule(allTagged) {
+    const hvac = allTagged.filter(f => f.trade === 'hvac');
+    if (hvac.length === 0) return '<p style="color:#888;font-style:italic;">No HVAC equipment placed.</p>';
+    let html = '<table><thead><tr><th>ID</th><th>Equipment</th><th>Room</th><th>Size/Rating</th><th>Notes</th></tr></thead><tbody>';
+    hvac.forEach(f => {
+      const s = f.spec;
+      html += '<tr><td><strong>' + f.id + '</strong></td><td>' + (s.desc || f.type) + '</td><td>' + f.room + '</td><td>' + (s.size || '—') + '</td><td>' + (s.note || '') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function generatePanelSchedule(allTagged) {
+    const elec = allTagged.filter(f => (f.trade === 'electrical' || f.trade === 'appliance') && f.spec.breaker && f.spec.breaker !== '—' && f.type !== 'panel' && f.type !== 'meter');
+    if (elec.length === 0) return '<p style="color:#888;font-style:italic;">No circuits to schedule.</p>';
+
+    // Group by room + breaker size
+    const groups = {};
+    elec.forEach(f => {
+      const key = f.room + '|' + (f.spec.breaker || '15A');
+      if (!groups[key]) groups[key] = { room: f.room, breaker: f.spec.breaker, wire: f.spec.wire, ids: [], totalLoad: 0 };
+      groups[key].ids.push(f.id);
+      groups[key].totalLoad += f.spec.load || 0;
+    });
+
+    let html = '<table><thead><tr><th>Circuit #</th><th>Breaker</th><th>Wire</th><th>Serves</th><th>Est. Load</th></tr></thead><tbody>';
+    let cNum = 1;
+    Object.values(groups).forEach(g => {
+      html += '<tr><td><strong>' + cNum + '</strong></td><td>' + g.breaker + '</td><td>' + g.wire + '</td><td>' + g.room + ' (' + g.ids.join(', ') + ')</td><td>' + g.totalLoad + 'W</td></tr>';
+      cNum++;
+    });
+    html += '</tbody></table>';
+    html += '<p style="font-size:11px;color:#666;margin-top:6px;">Total estimated load: ' + Object.values(groups).reduce((s, g) => s + g.totalLoad, 0) + 'W &nbsp;|&nbsp; Panel: 200A service recommended</p>';
+    return html;
+  }
+
+  function generateMaterialTakeoff(allTagged) {
+    // Count each type
+    const counts = {};
+    allTagged.forEach(f => {
+      if (!counts[f.type]) counts[f.type] = { count: 0, spec: f.spec, type: f.type };
+      counts[f.type].count++;
+    });
+
+    let html = '<table><thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Spec</th><th>Est. Cost</th></tr></thead><tbody>';
+    let totalCost = 0;
+    Object.values(counts).forEach(c => {
+      const unitCost = MAT_COSTS[c.type] || 0;
+      const lineCost = unitCost * c.count;
+      totalCost += lineCost;
+      html += '<tr><td>' + (c.spec.desc || c.type) + '</td><td>' + c.count + '</td><td>ea</td><td>' + (c.spec.breaker || c.spec.supply || c.spec.size || '—') + '</td><td>' + (lineCost > 0 ? '$' + lineCost.toFixed(0) : '—') + '</td></tr>';
+    });
+
+    // Estimate wire
+    const wireTypes = {};
+    allTagged.forEach(f => {
+      const w = f.spec.wire;
+      if (w && w !== '—' && w !== 'SER cable') {
+        if (!wireTypes[w]) wireTypes[w] = 0;
+        wireTypes[w] += 25; // ~25ft per run estimate
+      }
+    });
+    Object.entries(wireTypes).forEach(([w, ft]) => {
+      const cost = (WIRE_COSTS[w] || 0.50) * ft;
+      totalCost += cost;
+      html += '<tr><td>' + w + ' wire</td><td>' + ft + '</td><td>ft</td><td>Romex</td><td>$' + cost.toFixed(0) + '</td></tr>';
+    });
+
+    html += '<tr style="border-top:2px solid #333;font-weight:bold;"><td colspan="4">ESTIMATED MATERIAL TOTAL</td><td>$' + totalCost.toFixed(0) + '</td></tr>';
+    html += '</tbody></table>';
+    html += '<p style="font-size:11px;color:#666;margin-top:6px;">Costs are rough estimates for budgeting only. Get 3 bids. Wire runs estimated at 25\'/fixture avg.</p>';
+    return html;
+  }
+
+  function generateScopeOfWork(allTagged, rooms, bw, bh, buildingLabel) {
+    const elec = allTagged.filter(f => f.trade === 'electrical' || f.trade === 'appliance');
+    const plmb = allTagged.filter(f => f.trade === 'plumbing');
+    const hvac = allTagged.filter(f => f.trade === 'hvac');
+    const gen = allTagged.filter(f => f.trade === 'general');
+
+    let html = '<div class="sow-section">';
+    html += '<h4>Building: ' + buildingLabel + ' &mdash; ' + bw + "' &times; " + bh + "' (" + (bw * bh) + ' sqft)</h4>';
+    html += '<p><strong>Rooms:</strong> ' + rooms.map(r => r.label + ' (' + r.w + "' &times; " + r.h + "')").join(', ') + '</p>';
+
+    if (elec.length > 0) {
+      const outlets = elec.filter(f => f.type === 'outlet' || f.type === 'gfci').length;
+      const switches = elec.filter(f => f.type === 'switch' || f.type === 'dimmer').length;
+      const lights = elec.filter(f => f.type === 'light' || f.type === 'recessed' || f.type === 'fan').length;
+      const panels = elec.filter(f => f.type === 'panel').length;
+      html += '<h5>ELECTRICAL SCOPE</h5><ul>';
+      if (outlets > 0) html += '<li>' + outlets + ' receptacle(s) — includes GFCI where required</li>';
+      if (switches > 0) html += '<li>' + switches + ' switch(es) — includes dimmers</li>';
+      if (lights > 0) html += '<li>' + lights + ' light fixture(s) — ceiling, recessed, and fan/light combos</li>';
+      if (panels > 0) html += '<li>New/upgraded electrical panel — 200A service</li>';
+      const appls = elec.filter(f => APPL_TYPES.has(f.type));
+      appls.forEach(a => html += '<li>Dedicated circuit: ' + a.spec.desc + ' (' + a.spec.breaker + ')</li>');
+      html += '</ul>';
+    }
+
+    if (plmb.length > 0) {
+      html += '<h5>PLUMBING SCOPE</h5><ul>';
+      plmb.forEach(f => html += '<li>' + f.spec.desc + ' in ' + f.room + ' — Supply: ' + (f.spec.supply || '—') + ', Drain: ' + (f.spec.drain || '—') + '</li>');
+      html += '</ul>';
+    }
+
+    if (hvac.length > 0) {
+      html += '<h5>HVAC SCOPE</h5><ul>';
+      hvac.forEach(f => html += '<li>' + f.spec.desc + ' in ' + f.room + (f.spec.size ? ' (' + f.spec.size + ')' : '') + '</li>');
+      html += '</ul>';
+    }
+
+    const doors = gen.filter(f => f.type === 'door').length;
+    const windows = gen.filter(f => f.type === 'window').length;
+    if (doors > 0 || windows > 0) {
+      html += '<h5>GENERAL</h5><ul>';
+      if (doors > 0) html += '<li>' + doors + ' door opening(s)</li>';
+      if (windows > 0) html += '<li>' + windows + ' window(s)</li>';
+      html += '</ul>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // MAIN EXPORT FUNCTION
+  // ══════════════════════════════════════════════════════════════
+  window.exportConstructionDocs = function() {
+    const PRINT_SCALE = 14;
+    const builds = [
+      { key:'house',  BW:48, BH:38, label:'House' },
+      { key:'mil',    BW:25, BH:25, label:'MIL Suite' },
+      { key:'garage', BW:24, BH:30, label:'Garage' },
+    ];
+
+    let allTaggedAll = [];
+    const drawingPages = [];
+    const usedTypesSet = new Set();
+
+    builds.forEach(b => {
+      const sb = window._siteBuildings;
+      const bw = (sb && sb[b.key]) ? sb[b.key].w : b.BW;
+      const bh = (sb && sb[b.key]) ? sb[b.key].h : b.BH;
+      const bRooms = localStorage.getItem('interior_' + b.key)
+        ? JSON.parse(localStorage.getItem('interior_' + b.key))
+        : JSON.parse(JSON.stringify((window._ip && window._ip.PRESETS[b.key]) || []));
+      const bFix = localStorage.getItem('fixtures_' + b.key)
+        ? JSON.parse(localStorage.getItem('fixtures_' + b.key))
+        : [];
+
+      // Render construction drawing
+      const offscreen = document.createElement('canvas');
+      const oc = offscreen.getContext('2d');
+      const tagged = renderConstructionPlan(oc, bw, bh, PRINT_SCALE, bRooms, bFix, b.label);
+      bFix.forEach(f => usedTypesSet.add(f.type));
+
+      drawingPages.push({
+        label: b.label,
+        dims: bw + "' × " + bh + "'",
+        sqft: bw * bh,
+        img: offscreen.toDataURL('image/png'),
+        tagged,
+        rooms: bRooms,
+        bw, bh,
+      });
+
+      allTaggedAll = allTaggedAll.concat(tagged);
+    });
+
+    const legendImg = generateLegendCanvas(usedTypesSet);
+
+    // ── Build the HTML document ────────────────
+    const css = `
+      * { box-sizing:border-box; margin:0; padding:0; }
+      body { font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; background:#fff; color:#1a1a1a; padding:24px; font-size:12px; }
+      h1 { font-size:20px; font-weight:700; color:#0d2d4a; margin-bottom:2px; }
+      h2 { font-size:16px; font-weight:700; color:#0d2d4a; margin:18px 0 8px; border-bottom:2px solid #0d2d4a; padding-bottom:4px; }
+      h3 { font-size:13px; font-weight:700; color:#333; margin:14px 0 6px; text-transform:uppercase; letter-spacing:0.05em; }
+      h4 { font-size:14px; font-weight:600; margin-bottom:6px; }
+      h5 { font-size:12px; font-weight:700; color:#0d2d4a; margin:10px 0 4px; text-transform:uppercase; letter-spacing:0.04em; }
+      .meta { font-size:11px; color:#888; margin-bottom:4px; }
+      .page { page-break-after:always; }
+      .page:last-child { page-break-after:auto; }
+      .drawing { margin:12px 0; }
+      .drawing img { border:2px solid #333; max-width:100%; display:block; }
+      .legend-img { margin:8px 0 16px; max-width:620px; }
+      table { width:100%; border-collapse:collapse; font-size:11px; margin:8px 0 16px; }
+      th { background:#0d2d4a; color:#fff; text-align:left; padding:5px 8px; font-size:10px; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; }
+      td { padding:4px 8px; border-bottom:1px solid #ddd; vertical-align:top; }
+      tr:nth-child(even) { background:#f8f8f8; }
+      td strong { color:#cc0000; }
+      ul { margin:4px 0 10px 18px; }
+      li { margin-bottom:3px; }
+      .sow-section { margin-bottom:16px; }
+      .toc { margin:14px 0; }
+      .toc li { font-size:13px; margin:4px 0; }
+      .footer { text-align:center; font-size:10px; color:#999; margin-top:24px; border-top:1px solid #ddd; padding-top:8px; }
+      .btn-row { display:flex; gap:8px; margin:12px 0; }
+      .btn-row button { padding:8px 18px; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+      .btn-print { background:#0d2d4a; color:#fff; }
+      .btn-print:hover { background:#1a3f5c; }
+      .btn-dl { background:#4a9e49; color:#fff; }
+      .btn-dl:hover { background:#3d8a3d; }
+      @media print { .btn-row { display:none !important; } body { padding:12px; } }
+    `;
+
+    let body = '';
+
+    // ── Page 1: Cover / TOC ────────────────────
+    body += '<div class="page">';
+    body += '<h1>382 Stevens Ln — Construction Documents</h1>';
+    body += '<p class="meta">Livingston, TX 77351 &nbsp;·&nbsp; Lots 2 & 3, Block 1, Shelter Cove Sec 5</p>';
+    body += '<p class="meta">Prepared: ' + new Date().toLocaleDateString() + ' &nbsp;·&nbsp; TGM Group LLC</p>';
+    body += '<div class="btn-row"><button class="btn-print" onclick="window.print()">Print / Save as PDF</button></div>';
+    body += '<h2>Table of Contents</h2>';
+    body += '<ol class="toc">';
+    drawingPages.forEach((p, i) => body += '<li>' + p.label + ' — Floor Plan Drawing (' + p.dims + ', ' + p.sqft.toLocaleString() + ' sqft)</li>');
+    body += '<li>Electrical Fixture Schedule + Panel Schedule</li>';
+    body += '<li>Plumbing Fixture Schedule</li>';
+    body += '<li>HVAC Schedule</li>';
+    body += '<li>Material Takeoff (BOM)</li>';
+    body += '<li>Scope of Work Summary</li>';
+    body += '</ol>';
+    body += '<h2>Buildings Summary</h2>';
+    body += '<table><thead><tr><th>Building</th><th>Dimensions</th><th>Sqft</th><th>Rooms</th><th>Fixtures</th></tr></thead><tbody>';
+    drawingPages.forEach(p => {
+      body += '<tr><td><strong>' + p.label + '</strong></td><td>' + p.dims + '</td><td>' + p.sqft.toLocaleString() + '</td><td>' + p.rooms.length + '</td><td>' + p.tagged.length + '</td></tr>';
+    });
+    body += '</tbody></table>';
+    body += '</div>';
+
+    // ── Drawing Pages ──────────────────────────
+    drawingPages.forEach(p => {
+      body += '<div class="page">';
+      body += '<h2>' + p.label + ' — Floor Plan</h2>';
+      body += '<p class="meta">' + p.dims + ' &nbsp;·&nbsp; ' + p.sqft.toLocaleString() + ' sqft &nbsp;·&nbsp; Scale: 1 grid square = 1\'</p>';
+      body += '<div class="drawing"><img src="' + p.img + '" alt="' + p.label + ' floor plan"></div>';
+      if (legendImg) body += '<img class="legend-img" src="' + legendImg + '" alt="Symbol legend">';
+      // Room schedule for this building
+      body += '<h3>Room Schedule</h3>';
+      body += '<table><thead><tr><th>Room</th><th>Width</th><th>Depth</th><th>Sqft</th></tr></thead><tbody>';
+      p.rooms.forEach(r => body += '<tr><td>' + r.label + '</td><td>' + r.w + "'</td><td>" + r.h + "'</td><td>" + (r.w * r.h) + '</td></tr>');
+      body += '</tbody></table>';
+      body += '</div>';
+    });
+
+    // ── Electrical Schedule Page ────────────────
+    body += '<div class="page">';
+    body += '<h2>Electrical Fixture Schedule</h2>';
+    body += generateElectricalSchedule(allTaggedAll);
+    body += '<h2>Panel Schedule</h2>';
+    body += '<p class="meta">Auto-generated circuit grouping — verify with licensed electrician before final installation.</p>';
+    body += generatePanelSchedule(allTaggedAll);
+    body += '</div>';
+
+    // ── Plumbing Schedule Page ──────────────────
+    body += '<div class="page">';
+    body += '<h2>Plumbing Fixture Schedule</h2>';
+    body += '<p class="meta">Supply/drain/vent sizes per IPC/IRC. Verify with licensed plumber.</p>';
+    body += generatePlumbingSchedule(allTaggedAll);
+    body += '<h2>HVAC Schedule</h2>';
+    body += generateHVACSchedule(allTaggedAll);
+    body += '</div>';
+
+    // ── Material Takeoff Page ──────────────────
+    body += '<div class="page">';
+    body += '<h2>Material Takeoff — Bill of Materials</h2>';
+    body += '<p class="meta">Quantities based on placed fixtures. Use for bidding and ordering — verify on site.</p>';
+    body += generateMaterialTakeoff(allTaggedAll);
+    body += '</div>';
+
+    // ── Scope of Work Page ─────────────────────
+    body += '<div class="page">';
+    body += '<h2>Scope of Work Summary</h2>';
+    body += '<p class="meta">Per-trade summary — hand to each sub-contractor with the relevant drawing page.</p>';
+    drawingPages.forEach(p => {
+      body += generateScopeOfWork(p.tagged, p.rooms, p.bw, p.bh, p.label);
+    });
+    body += '</div>';
+
+    // ── Footer ─────────────────────────────────
+    body += '<div class="footer">382 Stevens Ln Construction Documents &nbsp;·&nbsp; TGM Group LLC &nbsp;·&nbsp; ' + new Date().toLocaleDateString() + ' &nbsp;·&nbsp; For contractor reference — verify all dimensions on site</div>';
+
+    const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>382 Stevens Ln — Construction Documents</title><style>' + css + '</style></head><body>' + body + '</body></html>';
+
+    // Open in new window
+    const win = window.open('', '_blank', 'width=1000,height=800');
+    if (win) {
+      win.document.write(html); win.document.close();
+    } else {
+      // Fallback: download
+      const blob = new Blob([html], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '382-stevens-construction-docs.html';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    }
+  };
+
+  // Quick single-drawing export
+  window.exportDrawingOnly = function() {
+    const PRINT_SCALE = 16;
+    const builds = [
+      { key:'house', BW:48, BH:38, label:'House' },
+      { key:'mil', BW:25, BH:25, label:'MIL Suite' },
+      { key:'garage', BW:24, BH:30, label:'Garage' },
+    ];
+    const imgs = builds.map(b => {
+      const sb = window._siteBuildings;
+      const bw = (sb && sb[b.key]) ? sb[b.key].w : b.BW;
+      const bh = (sb && sb[b.key]) ? sb[b.key].h : b.BH;
+      const bRooms = localStorage.getItem('interior_' + b.key) ? JSON.parse(localStorage.getItem('interior_' + b.key)) : JSON.parse(JSON.stringify((window._ip && window._ip.PRESETS[b.key]) || []));
+      const bFix = localStorage.getItem('fixtures_' + b.key) ? JSON.parse(localStorage.getItem('fixtures_' + b.key)) : [];
+      const off = document.createElement('canvas');
+      renderConstructionPlan(off.getContext('2d'), bw, bh, PRINT_SCALE, bRooms, bFix, b.label);
+      return { label: b.label, dims: bw + "' × " + bh + "'", sqft: bw * bh, img: off.toDataURL('image/png') };
+    });
+    const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>382 Stevens Ln — Drawings</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;background:#fff;padding:20px} .fp{margin-bottom:24px;page-break-after:always} .fp:last-child{page-break-after:auto} h2{font-size:15px;color:#0d2d4a;margin-bottom:4px} .meta{font-size:11px;color:#888;margin-bottom:8px} img{border:2px solid #333;max-width:100%;display:block} @media print{body{padding:8px}}</style></head><body>'
+      + imgs.map(p => '<div class="fp"><h2>382 Stevens Ln — ' + p.label + '</h2><p class="meta">' + p.dims + ' · ' + p.sqft.toLocaleString() + ' sqft · ' + new Date().toLocaleDateString() + '</p><img src="' + p.img + '"></div>').join('')
+      + '</body></html>';
+    const win = window.open('', '_blank', 'width=960,height=740');
+    if (win) { win.document.write(html); win.document.close(); }
+    else {
+      const blob = new Blob([html], { type:'text/html' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = '382-stevens-drawings.html'; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    }
+  };
 
 })();
 </script>
